@@ -1,0 +1,7 @@
+fiscal_year,year,los_rate_per_100k,source,benchmark,post_privatization,years_since_privatization
+1999/2000,2000,0.96,GAO Report 2005,1.0,True,4
+2003/2004,2004,0.79,GAO Report 2005,1.0,True,8
+2020/2021,2021,0.17,Nav Canada AR 2021,1.0,True,25
+2021/2022,2022,0.56,Nav Canada AR 2022,1.0,True,26
+2022/2023,2023,0.53,Nav Canada AR 2023,1.0,True,27
+2023/2024,2024,0.4,Nav Canada AR 2024,1.0,True,28
