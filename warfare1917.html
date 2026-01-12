@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Trench Warfare 1917</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            flex: 1;
+            touch-action: none;
+        }
+
+        #ui {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(20, 20, 40, 0.98), rgba(20, 20, 40, 0.85));
+            padding: 10px 8px;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 2px solid #3a3a5a;
+        }
+
+        .ui-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .unit-btn, .support-btn {
+            padding: 8px 6px;
+            border: 2px solid #4a4a6a;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #2a2a4a, #1a1a3a);
+            color: #c0c0d0;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 52px;
+            position: relative;
+            transition: all 0.15s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .unit-btn:active, .support-btn:active {
+            transform: scale(0.92);
+            background: linear-gradient(to bottom, #4a4a6a, #3a3a5a);
+            border-color: #6a6a8a;
+        }
+
+        .unit-btn.disabled, .support-btn.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .unit-btn .cost {
+            font-size: 9px;
+            color: #ffd700;
+        }
+
+        .support-btn .cooldown-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(to right, #ff4444, #ff6666);
+            border-radius: 0 0 8px 8px;
+            transition: width 0.1s;
+        }
+
+        .unit-icon {
+            font-size: 18px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        }
+
+        #topBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(20, 20, 40, 0.95), rgba(20, 20, 40, 0.7));
+            padding: 10px 12px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-bottom: 1px solid rgba(100,100,150,0.3);
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #c0c0d0;
+        }
+
+        .stat-icon {
+            font-size: 14px;
+        }
+
+        .morale-bar {
+            width: 70px;
+            height: 12px;
+            background: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        .morale-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .morale-fill.player {
+            background: linear-gradient(to right, #22aa44, #44ff66);
+        }
+
+        .morale-fill.enemy {
+            background: linear-gradient(to right, #aa2222, #ff4444);
+        }
+
+        #menuScreen, #victoryScreen, #defeatScreen, #factionScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 20, 0.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .menu-title {
+            font-size: 24px;
+            color: #ffd700;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        .menu-subtitle {
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }
+
+        .menu-btn {
+            padding: 14px 35px;
+            font-size: 16px;
+            background: linear-gradient(to bottom, #4a6a4a, #2a4a2a);
+            border: 2px solid #6a8a6a;
+            border-radius: 10px;
+            color: #dfd;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            min-width: 180px;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .menu-btn.red {
+            background: linear-gradient(to bottom, #6a4a4a, #4a2a2a);
+            border-color: #8a6a6a;
+            color: #fdd;
+        }
+
+        .menu-btn.blue {
+            background: linear-gradient(to bottom, #4a4a6a, #2a2a4a);
+            border-color: #6a6a8a;
+            color: #ddf;
+        }
+
+        .faction-btn {
+            padding: 20px 30px;
+            font-size: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .faction-btn.british {
+            background: linear-gradient(to bottom, #4a5a4a, #2a3a2a);
+            border: 3px solid #6a8a6a;
+            color: #cdc;
+        }
+
+        .faction-btn.german {
+            background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+            border: 3px solid #8a8a8a;
+            color: #ddd;
+        }
+
+        .faction-btn:active {
+            transform: scale(0.95);
+        }
+
+        .faction-icon {
+            font-size: 36px;
+        }
+
+        #advanceBtn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #5a8a5a, #3a6a3a);
+            border: 3px solid #7aaa7a;
+            color: #dfd;
+            font-size: 26px;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.15s;
+        }
+
+        #advanceBtn:active {
+            transform: translateY(-50%) scale(0.9);
+            background: linear-gradient(to bottom, #6a9a6a, #4a7a4a);
+        }
+
+        #retreatBtn {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #8a5a5a, #6a3a3a);
+            border: 3px solid #aa7a7a;
+            color: #fdd;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: all 0.15s;
+        }
+
+        #retreatBtn:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+
+        .instructions {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        #xpBar {
+            width: 100%;
+            max-width: 200px;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        #xpFill {
+            height: 100%;
+            background: linear-gradient(to right, #6644cc, #aa66ff);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .stats-row span {
+            color: #ffd700;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="topBar">
+            <div class="stat">
+                <span class="stat-icon">🪖</span>
+                <div class="morale-bar">
+                    <div class="morale-fill player" id="playerMorale" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat">
+                <span class="stat-icon">💰</span>
+                <span id="resourceDisplay">100</span>
+            </div>
+            <div class="stat">
+                <span class="stat-icon" id="waveIcon">⚔️</span>
+                <span id="waveDisplay">Wave 1</span>
+            </div>
+            <div class="stat">
+                <div class="morale-bar">
+                    <div class="morale-fill enemy" id="enemyMorale" style="width: 100%"></div>
+                </div>
+                <span class="stat-icon">💀</span>
+            </div>
+        </div>
+
+        <button id="advanceBtn">⚔️</button>
+        <button id="retreatBtn">◀</button>
+
+        <div id="ui">
+            <div class="ui-row">
+                <button class="unit-btn" data-unit="rifleman">
+                    <span class="unit-icon">🔫</span>
+                    <span>Rifle</span>
+                    <span class="cost">$10</span>
+                </button>
+                <button class="unit-btn" data-unit="machinegunner">
+                    <span class="unit-icon">🔥</span>
+                    <span>MG</span>
+                    <span class="cost">$25</span>
+                </button>
+                <button class="unit-btn" data-unit="assault">
+                    <span class="unit-icon">💣</span>
+                    <span>Storm</span>
+                    <span class="cost">$20</span>
+                </button>
+                <button class="unit-btn" data-unit="sniper">
+                    <span class="unit-icon">🎯</span>
+                    <span>Sniper</span>
+                    <span class="cost">$30</span>
+                </button>
+                <button class="unit-btn" data-unit="officer">
+                    <span class="unit-icon">⭐</span>
+                    <span>Officer</span>
+                    <span class="cost">$40</span>
+                </button>
+                <button class="unit-btn" data-unit="tank">
+                    <span class="unit-icon">🛡️</span>
+                    <span>Tank</span>
+                    <span class="cost">$100</span>
+                </button>
+            </div>
+            <div class="ui-row">
+                <button class="support-btn" data-support="artillery">
+                    <span class="unit-icon">💥</span>
+                    <span>Artillery</span>
+                    <div class="cooldown-bar" style="width: 0%"></div>
+                </button>
+                <button class="support-btn" data-support="mortar">
+                    <span class="unit-icon">🎇</span>
+                    <span>Mortar</span>
+                    <div class="cooldown-bar" style="width: 0%"></div>
+                </button>
+                <button class="support-btn" data-support="gas">
+                    <span class="unit-icon">☠️</span>
+                    <span>Gas</span>
+                    <div class="cooldown-bar" style="width: 0%"></div>
+                </button>
+            </div>
+        </div>
+
+        <div id="menuScreen">
+            <div class="menu-title">⚔️ TRENCH WARFARE ⚔️</div>
+            <div class="menu-title" style="font-size: 32px; margin-top: -10px;">1917</div>
+            <div class="menu-subtitle">A World War I Strategy Game</div>
+            <div class="instructions">
+                Deploy troops and capture enemy trenches.<br>
+                Break their morale or reach their base to win!<br>
+                Tap the battlefield to aim support fire.
+            </div>
+            <button class="menu-btn pulse" id="startBtn">⚔️ START CAMPAIGN</button>
+            <button class="menu-btn blue" id="skirmishBtn">🎲 QUICK BATTLE</button>
+        </div>
+
+        <div id="factionScreen" class="hidden">
+            <div class="menu-title">CHOOSE YOUR SIDE</div>
+            <div class="menu-subtitle">Select your faction for the campaign</div>
+            <div style="display: flex; gap: 20px; margin-top: 10px;">
+                <button class="faction-btn british" id="britishBtn">
+                    <span class="faction-icon">🇬🇧</span>
+                    <span>BRITISH</span>
+                </button>
+                <button class="faction-btn german" id="germanBtn">
+                    <span class="faction-icon">🇩🇪</span>
+                    <span>GERMAN</span>
+                </button>
+            </div>
+            <button class="menu-btn red" id="backFromFactionBtn" style="margin-top: 20px;">← BACK</button>
+        </div>
+
+        <div id="victoryScreen" class="hidden">
+            <div class="menu-title">🏆 VICTORY! 🏆</div>
+            <div class="menu-subtitle" id="victoryMessage">The enemy has surrendered!</div>
+            <div class="stats-row">
+                <div>Kills: <span id="killCount">0</span></div>
+                <div>XP: <span id="xpEarned">0</span></div>
+            </div>
+            <div id="xpBar"><div id="xpFill"></div></div>
+            <button class="menu-btn" id="nextLevelBtn">NEXT BATTLE →</button>
+            <button class="menu-btn red" id="menuFromVictoryBtn">MAIN MENU</button>
+        </div>
+
+        <div id="defeatScreen" class="hidden">
+            <div class="menu-title">💀 DEFEAT 💀</div>
+            <div class="menu-subtitle" id="defeatMessage">Your forces have been routed!</div>
+            <button class="menu-btn" id="retryBtn">🔄 RETRY</button>
+            <button class="menu-btn red" id="menuFromDefeatBtn">MAIN MENU</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ AUDIO SYSTEM ============
+        const AudioSystem = {
+            ctx: null,
+            enabled: true,
+
+            init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    this.enabled = false;
+                }
+            },
+
+            resume() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            play(type, volume = 0.3) {
+                if (!this.enabled || !this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+
+                switch(type) {
+                    case 'shoot':
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+                        gain.gain.setValueAtTime(volume * 0.5, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                        break;
+
+                    case 'explosion':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(100, now);
+                        osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+                        gain.gain.setValueAtTime(volume, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                        break;
+
+                    case 'death':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                        gain.gain.setValueAtTime(volume * 0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        osc.start(now);
+                        osc.stop(now + 0.2);
+                        break;
+
+                    case 'victory':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.setValueAtTime(550, now + 0.15);
+                        osc.frequency.setValueAtTime(660, now + 0.3);
+                        gain.gain.setValueAtTime(volume, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                        osc.start(now);
+                        osc.stop(now + 0.5);
+                        break;
+
+                    case 'defeat':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(330, now);
+                        osc.frequency.setValueAtTime(220, now + 0.2);
+                        osc.frequency.setValueAtTime(110, now + 0.4);
+                        gain.gain.setValueAtTime(volume, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                        osc.start(now);
+                        osc.stop(now + 0.6);
+                        break;
+                }
+            }
+        };
+
+        // ============ GAME CONFIGURATION ============
+        const CONFIG = {
+            units: {
+                rifleman: { cost: 10, hp: 100, damage: 18, range: 160, fireRate: 1200, speed: 32, count: 3 },
+                machinegunner: { cost: 25, hp: 80, damage: 10, range: 220, fireRate: 120, speed: 20, count: 2 },
+                assault: { cost: 20, hp: 130, damage: 30, range: 90, fireRate: 700, speed: 45, count: 2 },
+                sniper: { cost: 30, hp: 50, damage: 90, range: 400, fireRate: 2500, speed: 25, count: 1 },
+                officer: { cost: 40, hp: 90, damage: 22, range: 140, fireRate: 1100, speed: 30, moraleBoost: 0.25, count: 1 },
+                tank: { cost: 100, hp: 600, damage: 50, range: 200, fireRate: 2200, speed: 12, armor: 0.65, count: 1 }
+            },
+            support: {
+                artillery: { cooldown: 18000, damage: 200, radius: 90, duration: 3500 },
+                mortar: { cooldown: 12000, damage: 100, radius: 60, duration: 2000 },
+                gas: { cooldown: 25000, damage: 8, radius: 120, duration: 10000 }
+            },
+            resourceRate: 6,
+            maxResources: 250,
+            baseMorale: 100,
+            moraleLossPerDeath: 2,
+            moraleLossPerTrenchLost: 8
+        };
+
+        // ============ GAME STATE ============
+        const game = {
+            state: 'menu',
+            faction: 'british',
+            level: 1,
+            wave: 1,
+            xp: 0,
+            xpToLevel: 100,
+            totalXp: 0,
+            resources: 100,
+            playerMorale: 100,
+            enemyMorale: 100,
+            units: [],
+            projectiles: [],
+            effects: [],
+            trenches: [],
+            barbedWire: [],
+            craters: [],
+            supportCooldowns: { artillery: 0, mortar: 0, gas: 0 },
+            lastTime: 0,
+            advancing: false,
+            retreating: false,
+            targetX: null,
+            canvas: null,
+            ctx: null,
+            width: 0,
+            height: 0,
+            groundY: 0,
+            cameraX: 0,
+            battlefieldWidth: 2000,
+            enemySpawnTimer: 0,
+            enemySpawnRate: 4000,
+            killCount: 0,
+            clouds: []
+        };
+
+        // ============ INITIALIZATION ============
+        function init() {
+            game.canvas = document.getElementById('gameCanvas');
+            game.ctx = game.canvas.getContext('2d');
+
+            AudioSystem.init();
+
+            // Generate clouds
+            for (let i = 0; i < 8; i++) {
+                game.clouds.push({
+                    x: Math.random() * 3000,
+                    y: 30 + Math.random() * 60,
+                    size: 30 + Math.random() * 40,
+                    speed: 5 + Math.random() * 10
+                });
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            setupEventListeners();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const ui = document.getElementById('ui');
+            const uiHeight = ui.offsetHeight;
+
+            game.canvas.width = container.clientWidth * window.devicePixelRatio;
+            game.canvas.height = (container.clientHeight - uiHeight) * window.devicePixelRatio;
+
+            game.canvas.style.width = container.clientWidth + 'px';
+            game.canvas.style.height = (container.clientHeight - uiHeight) + 'px';
+
+            game.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            game.width = container.clientWidth;
+            game.height = container.clientHeight - uiHeight;
+            game.groundY = game.height * 0.72;
+        }
+
+        function setupEventListeners() {
+            // Touch start to resume audio
+            document.addEventListener('touchstart', () => AudioSystem.resume(), { once: true });
+            document.addEventListener('click', () => AudioSystem.resume(), { once: true });
+
+            // Menu buttons
+            document.getElementById('startBtn').addEventListener('click', showFactionSelect);
+            document.getElementById('skirmishBtn').addEventListener('click', () => startGame(0));
+            document.getElementById('britishBtn').addEventListener('click', () => { game.faction = 'british'; startGame(1); });
+            document.getElementById('germanBtn').addEventListener('click', () => { game.faction = 'german'; startGame(1); });
+            document.getElementById('backFromFactionBtn').addEventListener('click', showMenu);
+            document.getElementById('nextLevelBtn').addEventListener('click', nextLevel);
+            document.getElementById('retryBtn').addEventListener('click', retryLevel);
+            document.getElementById('menuFromVictoryBtn').addEventListener('click', showMenu);
+            document.getElementById('menuFromDefeatBtn').addEventListener('click', showMenu);
+
+            // Unit buttons
+            document.querySelectorAll('.unit-btn').forEach(btn => {
+                btn.addEventListener('click', () => spawnUnit(btn.dataset.unit, true));
+                btn.addEventListener('touchend', (e) => { e.preventDefault(); spawnUnit(btn.dataset.unit, true); });
+            });
+
+            // Support buttons
+            document.querySelectorAll('.support-btn').forEach(btn => {
+                btn.addEventListener('click', () => activateSupport(btn.dataset.support));
+                btn.addEventListener('touchend', (e) => { e.preventDefault(); activateSupport(btn.dataset.support); });
+            });
+
+            // Advance/Retreat buttons
+            const setupButton = (id, action, value) => {
+                const btn = document.getElementById(id);
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); game[action] = value; });
+                btn.addEventListener('touchend', (e) => { e.preventDefault(); game[action] = false; });
+                btn.addEventListener('mousedown', () => game[action] = value);
+                btn.addEventListener('mouseup', () => game[action] = false);
+                btn.addEventListener('mouseleave', () => game[action] = false);
+            };
+
+            setupButton('advanceBtn', 'advancing', true);
+            setupButton('retreatBtn', 'retreating', true);
+
+            // Canvas touch/click for targeting
+            game.canvas.addEventListener('click', handleCanvasClick);
+            game.canvas.addEventListener('touchstart', handleCanvasTouch);
+        }
+
+        function handleCanvasClick(e) {
+            const rect = game.canvas.getBoundingClientRect();
+            game.targetX = (e.clientX - rect.left) + game.cameraX;
+            createTargetIndicator();
+        }
+
+        function handleCanvasTouch(e) {
+            e.preventDefault();
+            const rect = game.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            game.targetX = (touch.clientX - rect.left) + game.cameraX;
+            createTargetIndicator();
+        }
+
+        function createTargetIndicator() {
+            game.effects.push({
+                type: 'target',
+                x: game.targetX,
+                y: game.groundY,
+                life: 1,
+                decay: 0.02
+            });
+        }
+
+        // ============ GAME FLOW ============
+        function showFactionSelect() {
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('factionScreen').classList.remove('hidden');
+        }
+
+        function startGame(level) {
+            game.level = level || 1;
+            game.wave = 1;
+            game.resources = 100;
+            game.playerMorale = 100;
+            game.enemyMorale = 100;
+            game.units = [];
+            game.projectiles = [];
+            game.effects = [];
+            game.supportCooldowns = { artillery: 0, mortar: 0, gas: 0 };
+            game.cameraX = 0;
+            game.advancing = false;
+            game.retreating = false;
+            game.enemySpawnTimer = 0;
+            game.killCount = 0;
+
+            // Difficulty scaling
+            const difficultyMod = 1 + (game.level - 1) * 0.15;
+            game.enemySpawnRate = Math.max(2500, 5000 - game.level * 300);
+            game.battlefieldWidth = 1400 + game.level * 150;
+
+            // Create battlefield features
+            createTrenches();
+            createBarbedWire();
+            createCraters();
+
+            game.state = 'playing';
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('factionScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('defeatScreen').classList.add('hidden');
+
+            updateUI();
+        }
+
+        function createTrenches() {
+            game.trenches = [];
+            const numTrenches = Math.min(5, 2 + Math.floor(game.level / 2));
+            const spacing = game.battlefieldWidth / (numTrenches + 1);
+
+            for (let i = 1; i <= numTrenches; i++) {
+                const isPlayerSide = i <= Math.ceil(numTrenches / 2);
+                game.trenches.push({
+                    x: spacing * i,
+                    width: 70,
+                    owner: isPlayerSide ? 'player' : 'enemy',
+                    originalOwner: isPlayerSide ? 'player' : 'enemy'
+                });
+            }
+        }
+
+        function createBarbedWire() {
+            game.barbedWire = [];
+            const numWire = 3 + game.level;
+            for (let i = 0; i < numWire; i++) {
+                game.barbedWire.push({
+                    x: 200 + Math.random() * (game.battlefieldWidth - 400),
+                    width: 30 + Math.random() * 20
+                });
+            }
+        }
+
+        function createCraters() {
+            game.craters = [];
+            const numCraters = 5 + game.level * 2;
+            for (let i = 0; i < numCraters; i++) {
+                game.craters.push({
+                    x: 100 + Math.random() * (game.battlefieldWidth - 200),
+                    radius: 10 + Math.random() * 25
+                });
+            }
+        }
+
+        function showMenu() {
+            game.state = 'menu';
+            document.getElementById('menuScreen').classList.remove('hidden');
+            document.getElementById('factionScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('defeatScreen').classList.add('hidden');
+        }
+
+        function victory() {
+            game.state = 'victory';
+            AudioSystem.play('victory', 0.5);
+
+            const xpEarned = 30 + game.level * 15 + game.killCount * 2;
+            game.xp += xpEarned;
+            game.totalXp += xpEarned;
+
+            while (game.xp >= game.xpToLevel) {
+                game.xp -= game.xpToLevel;
+                game.xpToLevel = Math.floor(game.xpToLevel * 1.4);
+            }
+
+            document.getElementById('xpEarned').textContent = xpEarned;
+            document.getElementById('killCount').textContent = game.killCount;
+            document.getElementById('xpFill').style.width = (game.xp / game.xpToLevel * 100) + '%';
+            document.getElementById('victoryMessage').textContent =
+                game.enemyMorale <= 0 ? 'Enemy morale has broken!' : 'You captured the enemy base!';
+            document.getElementById('victoryScreen').classList.remove('hidden');
+        }
+
+        function defeat() {
+            game.state = 'defeat';
+            AudioSystem.play('defeat', 0.5);
+
+            document.getElementById('defeatMessage').textContent =
+                game.playerMorale <= 0 ? 'Your troops have lost the will to fight!' : 'The enemy has overrun your position!';
+            document.getElementById('defeatScreen').classList.remove('hidden');
+        }
+
+        function nextLevel() {
+            game.level++;
+            startGame(game.level);
+        }
+
+        function retryLevel() {
+            startGame(game.level);
+        }
+
+        // ============ UNIT MANAGEMENT ============
+        function spawnUnit(type, isPlayer) {
+            const config = CONFIG.units[type];
+            if (!config) return;
+
+            if (isPlayer && game.resources < config.cost) return;
+            if (isPlayer) game.resources -= config.cost;
+
+            const x = isPlayer ? 60 : game.battlefieldWidth - 60;
+            const baseY = game.groundY - 15;
+
+            for (let i = 0; i < config.count; i++) {
+                const unit = {
+                    type,
+                    isPlayer,
+                    x: x + (isPlayer ? -i * 18 : i * 18),
+                    y: baseY + Math.random() * 8 - 4,
+                    hp: config.hp,
+                    maxHp: config.hp,
+                    damage: config.damage,
+                    range: config.range,
+                    fireRate: config.fireRate,
+                    speed: config.speed * (0.9 + Math.random() * 0.2),
+                    lastFire: 0,
+                    state: 'advancing',
+                    currentTrench: null,
+                    armor: config.armor || 0,
+                    moraleBoost: config.moraleBoost || 0,
+                    width: type === 'tank' ? 45 : 22,
+                    height: type === 'tank' ? 28 : 32,
+                    animFrame: Math.random()
+                };
+                game.units.push(unit);
+            }
+
+            updateUI();
+        }
+
+        function spawnEnemyWave() {
+            const unitTypes = ['rifleman', 'rifleman', 'rifleman'];
+
+            if (game.level >= 2) unitTypes.push('machinegunner', 'assault');
+            if (game.level >= 3) unitTypes.push('sniper', 'officer');
+            if (game.level >= 5) unitTypes.push('tank');
+
+            // Spawn 1-3 units per wave
+            const numUnits = 1 + Math.floor(Math.random() * Math.min(3, game.level));
+
+            for (let i = 0; i < numUnits; i++) {
+                const type = unitTypes[Math.floor(Math.random() * unitTypes.length)];
+                setTimeout(() => spawnUnit(type, false), i * 500);
+            }
+
+            game.wave++;
+        }
+
+        // ============ SUPPORT ABILITIES ============
+        function activateSupport(type) {
+            if (game.supportCooldowns[type] > 0) return;
+            if (!game.targetX) game.targetX = game.battlefieldWidth * 0.6;
+
+            const config = CONFIG.support[type];
+            game.supportCooldowns[type] = config.cooldown;
+
+            AudioSystem.play('explosion', 0.5);
+
+            // Create persistent effect
+            game.effects.push({
+                type: 'support_' + type,
+                supportType: type,
+                x: game.targetX,
+                y: game.groundY,
+                radius: config.radius,
+                damage: config.damage,
+                duration: config.duration,
+                elapsed: 0,
+                isPlayer: true
+            });
+
+            // Create explosion particles
+            createExplosion(game.targetX, game.groundY - 20, type);
+
+            // Add crater
+            if (type === 'artillery') {
+                game.craters.push({ x: game.targetX, radius: config.radius * 0.4 });
+            }
+        }
+
+        function createExplosion(x, y, type) {
+            const colors = {
+                artillery: ['#ff6600', '#ff9900', '#ffcc00'],
+                mortar: ['#ffaa00', '#ffcc00', '#ffee00'],
+                gas: ['#88ff88', '#aaffaa', '#ccffcc'],
+                death: ['#aa0000', '#880000', '#660000']
+            };
+
+            const colorSet = colors[type] || colors.death;
+            const numParticles = type === 'gas' ? 30 : 25;
+
+            for (let i = 0; i < numParticles; i++) {
+                const angle = (i / numParticles) * Math.PI * 2;
+                const speed = 80 + Math.random() * 120;
+
+                game.effects.push({
+                    type: 'particle',
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 60,
+                    vy: Math.sin(angle) * speed - Math.random() * 100,
+                    color: colorSet[Math.floor(Math.random() * colorSet.length)],
+                    size: 4 + Math.random() * 6,
+                    life: 1,
+                    decay: 0.015 + Math.random() * 0.02
+                });
+            }
+
+            // Screen shake effect
+            game.effects.push({
+                type: 'shake',
+                intensity: type === 'artillery' ? 8 : 4,
+                duration: 300,
+                elapsed: 0
+            });
+        }
+
+        // ============ GAME LOOP ============
+        function gameLoop(timestamp) {
+            const deltaTime = Math.min(timestamp - game.lastTime, 50);
+            game.lastTime = timestamp;
+
+            if (game.state === 'playing') {
+                update(deltaTime);
+            }
+
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            const delta = dt / 1000;
+
+            // Resource generation
+            game.resources = Math.min(CONFIG.maxResources, game.resources + CONFIG.resourceRate * delta);
+
+            // Enemy spawning
+            game.enemySpawnTimer += dt;
+            if (game.enemySpawnTimer >= game.enemySpawnRate) {
+                game.enemySpawnTimer = 0;
+                spawnEnemyWave();
+            }
+
+            // Update cooldowns
+            for (const type in game.supportCooldowns) {
+                game.supportCooldowns[type] = Math.max(0, game.supportCooldowns[type] - dt);
+            }
+
+            // Update units
+            updateUnits(delta);
+
+            // Update projectiles
+            updateProjectiles(delta);
+
+            // Update effects
+            updateEffects(delta);
+
+            // Update trench ownership
+            updateTrenchOwnership();
+
+            // Update camera
+            updateCamera();
+
+            // Update clouds
+            for (const cloud of game.clouds) {
+                cloud.x -= cloud.speed * delta;
+                if (cloud.x < -100) cloud.x = game.battlefieldWidth + 100;
+            }
+
+            // Check win/lose
+            checkGameEnd();
+
+            // Update UI
+            updateUI();
+        }
+
+        function updateUnits(delta) {
+            for (let i = game.units.length - 1; i >= 0; i--) {
+                const unit = game.units[i];
+
+                // Animation
+                unit.animFrame += delta * 3;
+
+                // Find nearest enemy
+                let nearestEnemy = null;
+                let nearestDist = Infinity;
+
+                for (const other of game.units) {
+                    if (other.isPlayer !== unit.isPlayer && other.hp > 0) {
+                        const dist = Math.abs(other.x - unit.x);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearestEnemy = other;
+                        }
+                    }
+                }
+
+                const direction = unit.isPlayer ? 1 : -1;
+
+                // Check if in trench
+                let inTrench = null;
+                for (const trench of game.trenches) {
+                    if (Math.abs(unit.x - trench.x) < trench.width / 2) {
+                        inTrench = trench;
+                        break;
+                    }
+                }
+
+                // Check barbed wire slow
+                let wireSlowdown = 1;
+                for (const wire of game.barbedWire) {
+                    if (Math.abs(unit.x - wire.x) < wire.width && unit.type !== 'tank') {
+                        wireSlowdown = 0.3;
+                        // Take minor damage from wire
+                        if (Math.random() < 0.01) unit.hp -= 2;
+                        break;
+                    }
+                }
+
+                // Determine behavior
+                if (nearestEnemy && nearestDist <= unit.range) {
+                    unit.state = 'firing';
+                    if (game.lastTime - unit.lastFire >= unit.fireRate) {
+                        fireAtTarget(unit, nearestEnemy);
+                        unit.lastFire = game.lastTime;
+                    }
+
+                    // Slow approach while firing
+                    if (nearestDist > unit.range * 0.5 && shouldAdvance(unit)) {
+                        unit.x += direction * unit.speed * 0.3 * wireSlowdown * delta;
+                    }
+                } else if (inTrench && !shouldAdvance(unit)) {
+                    unit.state = 'inTrench';
+                    unit.currentTrench = inTrench;
+                } else if (shouldRetreat(unit)) {
+                    unit.state = 'retreating';
+                    unit.x -= direction * unit.speed * wireSlowdown * delta;
+                } else {
+                    unit.state = 'advancing';
+                    unit.x += direction * unit.speed * wireSlowdown * delta;
+                }
+
+                // Clamp position
+                unit.x = Math.max(20, Math.min(game.battlefieldWidth - 20, unit.x));
+
+                // Remove dead units
+                if (unit.hp <= 0) {
+                    if (unit.isPlayer) {
+                        game.playerMorale -= CONFIG.moraleLossPerDeath;
+                    } else {
+                        game.enemyMorale -= CONFIG.moraleLossPerDeath;
+                        game.killCount++;
+                    }
+
+                    AudioSystem.play('death', 0.2);
+                    createExplosion(unit.x, unit.y - 10, 'death');
+                    game.units.splice(i, 1);
+                }
+            }
+        }
+
+        function shouldAdvance(unit) {
+            if (unit.isPlayer && game.advancing) return true;
+            if (!unit.isPlayer) {
+                const playerCount = game.units.filter(u => u.isPlayer).length;
+                const enemyCount = game.units.filter(u => !u.isPlayer).length;
+                // AI advances when it has numbers advantage or randomly
+                if (enemyCount > playerCount * 1.2) return true;
+                if (game.enemyMorale > 60 && Math.random() < 0.008) return true;
+            }
+            return false;
+        }
+
+        function shouldRetreat(unit) {
+            if (unit.isPlayer && game.retreating) return true;
+            if (!unit.isPlayer) {
+                const playerCount = game.units.filter(u => u.isPlayer).length;
+                const enemyCount = game.units.filter(u => !u.isPlayer).length;
+                if (playerCount > enemyCount * 2 && Math.random() < 0.015) return true;
+                if (game.enemyMorale < 30 && Math.random() < 0.01) return true;
+            }
+            return false;
+        }
+
+        function fireAtTarget(shooter, target) {
+            AudioSystem.play('shoot', 0.1);
+
+            const startY = shooter.y - (shooter.type === 'tank' ? 15 : 12);
+            const angle = Math.atan2((target.y - 10) - startY, target.x - shooter.x);
+            const speed = shooter.type === 'sniper' ? 600 : (shooter.type === 'tank' ? 350 : 450);
+
+            game.projectiles.push({
+                x: shooter.x + (shooter.isPlayer ? 10 : -10),
+                y: startY,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                damage: shooter.damage,
+                isPlayer: shooter.isPlayer,
+                type: shooter.type,
+                size: shooter.type === 'tank' ? 5 : (shooter.type === 'machinegunner' ? 2 : 3)
+            });
+
+            // Muzzle flash
+            game.effects.push({
+                type: 'muzzle',
+                x: shooter.x + (shooter.isPlayer ? 15 : -15),
+                y: startY,
+                life: 1,
+                decay: 0.15
+            });
+        }
+
+        function updateProjectiles(delta) {
+            for (let i = game.projectiles.length - 1; i >= 0; i--) {
+                const proj = game.projectiles[i];
+
+                proj.x += proj.vx * delta;
+                proj.y += proj.vy * delta;
+
+                // Check collision
+                for (const unit of game.units) {
+                    if (unit.isPlayer !== proj.isPlayer && unit.hp > 0) {
+                        const hitWidth = unit.width * 0.6;
+                        const hitHeight = unit.height * 0.8;
+
+                        if (Math.abs(proj.x - unit.x) < hitWidth &&
+                            proj.y > unit.y - hitHeight && proj.y < unit.y + 5) {
+                            const damage = proj.damage * (1 - unit.armor);
+                            unit.hp -= damage;
+
+                            // Hit effect
+                            game.effects.push({
+                                type: 'hit',
+                                x: proj.x,
+                                y: proj.y,
+                                life: 1,
+                                decay: 0.1
+                            });
+
+                            game.projectiles.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+
+                // Remove offscreen
+                if (proj.x < -50 || proj.x > game.battlefieldWidth + 50 ||
+                    proj.y < -50 || proj.y > game.height + 50) {
+                    game.projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateEffects(delta) {
+            for (let i = game.effects.length - 1; i >= 0; i--) {
+                const effect = game.effects[i];
+
+                if (effect.type === 'particle') {
+                    effect.x += effect.vx * delta;
+                    effect.y += effect.vy * delta;
+                    effect.vy += 300 * delta;
+                    effect.life -= effect.decay;
+                    effect.size *= 0.98;
+
+                    if (effect.life <= 0) game.effects.splice(i, 1);
+
+                } else if (effect.type.startsWith('support_')) {
+                    effect.elapsed += delta * 1000;
+
+                    // Damage units in radius
+                    for (const unit of game.units) {
+                        if (unit.isPlayer !== effect.isPlayer) {
+                            const dist = Math.abs(unit.x - effect.x);
+                            if (dist < effect.radius) {
+                                const damage = effect.damage * delta * (1 - dist / effect.radius);
+                                unit.hp -= damage * (1 - unit.armor);
+                            }
+                        }
+                    }
+
+                    // Gas lingers with visual
+                    if (effect.supportType === 'gas' && Math.random() < 0.3) {
+                        game.effects.push({
+                            type: 'particle',
+                            x: effect.x + (Math.random() - 0.5) * effect.radius * 2,
+                            y: effect.y - Math.random() * 40,
+                            vx: (Math.random() - 0.5) * 20,
+                            vy: -10 - Math.random() * 20,
+                            color: 'rgba(100, 200, 100, 0.5)',
+                            size: 15 + Math.random() * 15,
+                            life: 0.8,
+                            decay: 0.02
+                        });
+                    }
+
+                    if (effect.elapsed >= effect.duration) game.effects.splice(i, 1);
+
+                } else if (effect.type === 'shake') {
+                    effect.elapsed += delta * 1000;
+                    if (effect.elapsed >= effect.duration) game.effects.splice(i, 1);
+
+                } else if (effect.life !== undefined) {
+                    effect.life -= effect.decay;
+                    if (effect.life <= 0) game.effects.splice(i, 1);
+                }
+            }
+        }
+
+        function updateTrenchOwnership() {
+            for (const trench of game.trenches) {
+                let playerUnits = 0;
+                let enemyUnits = 0;
+
+                for (const unit of game.units) {
+                    if (Math.abs(unit.x - trench.x) < trench.width) {
+                        if (unit.isPlayer) playerUnits++;
+                        else enemyUnits++;
+                    }
+                }
+
+                const oldOwner = trench.owner;
+                if (playerUnits > 0 && enemyUnits === 0) {
+                    trench.owner = 'player';
+                } else if (enemyUnits > 0 && playerUnits === 0) {
+                    trench.owner = 'enemy';
+                }
+
+                // Morale impact for trench capture
+                if (trench.owner !== oldOwner) {
+                    if (trench.owner === 'player' && oldOwner === 'enemy') {
+                        game.enemyMorale -= CONFIG.moraleLossPerTrenchLost;
+                        game.playerMorale = Math.min(100, game.playerMorale + 5);
+                    } else if (trench.owner === 'enemy' && oldOwner === 'player') {
+                        game.playerMorale -= CONFIG.moraleLossPerTrenchLost;
+                        game.enemyMorale = Math.min(100, game.enemyMorale + 5);
+                    }
+                }
+            }
+        }
+
+        function updateCamera() {
+            const playerUnits = game.units.filter(u => u.isPlayer);
+            if (playerUnits.length > 0) {
+                const avgX = playerUnits.reduce((sum, u) => sum + u.x, 0) / playerUnits.length;
+                const targetCameraX = avgX - game.width * 0.35;
+                game.cameraX += (targetCameraX - game.cameraX) * 0.08;
+            }
+
+            game.cameraX = Math.max(0, Math.min(game.battlefieldWidth - game.width, game.cameraX));
+        }
+
+        function checkGameEnd() {
+            if (game.playerMorale <= 0) { defeat(); return; }
+            if (game.enemyMorale <= 0) { victory(); return; }
+
+            for (const unit of game.units) {
+                if (unit.isPlayer && unit.x >= game.battlefieldWidth - 30) { victory(); return; }
+                if (!unit.isPlayer && unit.x <= 30) { defeat(); return; }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('resourceDisplay').textContent = Math.floor(game.resources);
+            document.getElementById('waveDisplay').textContent = 'Wave ' + game.wave;
+            document.getElementById('playerMorale').style.width = Math.max(0, game.playerMorale) + '%';
+            document.getElementById('enemyMorale').style.width = Math.max(0, game.enemyMorale) + '%';
+
+            document.querySelectorAll('.unit-btn').forEach(btn => {
+                const cost = CONFIG.units[btn.dataset.unit]?.cost || 999;
+                btn.classList.toggle('disabled', game.resources < cost);
+            });
+
+            document.querySelectorAll('.support-btn').forEach(btn => {
+                const type = btn.dataset.support;
+                const cooldown = game.supportCooldowns[type];
+                const maxCooldown = CONFIG.support[type].cooldown;
+                const bar = btn.querySelector('.cooldown-bar');
+
+                bar.style.width = cooldown > 0 ? (cooldown / maxCooldown * 100) + '%' : '0%';
+                btn.classList.toggle('disabled', cooldown > 0);
+            });
+        }
+
+        // ============ RENDERING ============
+        function render() {
+            const ctx = game.ctx;
+
+            // Screen shake
+            let shakeX = 0, shakeY = 0;
+            for (const effect of game.effects) {
+                if (effect.type === 'shake') {
+                    const progress = 1 - effect.elapsed / effect.duration;
+                    shakeX = (Math.random() - 0.5) * effect.intensity * progress;
+                    shakeY = (Math.random() - 0.5) * effect.intensity * progress;
+                }
+            }
+
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
+
+            // Sky
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, game.groundY);
+            skyGrad.addColorStop(0, '#3a4a5a');
+            skyGrad.addColorStop(0.5, '#5a6a7a');
+            skyGrad.addColorStop(1, '#7a8a9a');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, game.width, game.groundY);
+
+            // Clouds
+            ctx.fillStyle = 'rgba(150, 150, 160, 0.4)';
+            for (const cloud of game.clouds) {
+                const cx = cloud.x - game.cameraX * 0.3;
+                if (cx > -100 && cx < game.width + 100) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cloud.y, cloud.size, 0, Math.PI * 2);
+                    ctx.arc(cx + cloud.size * 0.6, cloud.y - 5, cloud.size * 0.7, 0, Math.PI * 2);
+                    ctx.arc(cx - cloud.size * 0.5, cloud.y + 5, cloud.size * 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Distant hills
+            ctx.fillStyle = '#4a5a4a';
+            ctx.beginPath();
+            ctx.moveTo(0, game.groundY);
+            for (let x = 0; x <= game.width; x += 50) {
+                const worldX = x + game.cameraX * 0.2;
+                const h = Math.sin(worldX * 0.003) * 30 + Math.sin(worldX * 0.007) * 15;
+                ctx.lineTo(x, game.groundY - 40 + h);
+            }
+            ctx.lineTo(game.width, game.groundY);
+            ctx.fill();
+
+            // Ground
+            const groundGrad = ctx.createLinearGradient(0, game.groundY, 0, game.height);
+            groundGrad.addColorStop(0, '#5a4a3a');
+            groundGrad.addColorStop(0.3, '#4a3a2a');
+            groundGrad.addColorStop(1, '#3a2a1a');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, game.groundY, game.width, game.height - game.groundY);
+
+            // Craters
+            for (const crater of game.craters) {
+                const cx = crater.x - game.cameraX;
+                if (cx > -50 && cx < game.width + 50) {
+                    ctx.fillStyle = '#3a2a1a';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, game.groundY + 5, crater.radius, crater.radius * 0.3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#2a1a0a';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, game.groundY + 8, crater.radius * 0.7, crater.radius * 0.2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Barbed wire
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            for (const wire of game.barbedWire) {
+                const wx = wire.x - game.cameraX;
+                if (wx > -50 && wx < game.width + 50) {
+                    // Posts
+                    ctx.fillStyle = '#4a3a2a';
+                    ctx.fillRect(wx - wire.width/2 - 2, game.groundY - 25, 4, 25);
+                    ctx.fillRect(wx + wire.width/2 - 2, game.groundY - 25, 4, 25);
+
+                    // Wire lines
+                    ctx.beginPath();
+                    for (let y = -20; y <= -5; y += 7) {
+                        ctx.moveTo(wx - wire.width/2, game.groundY + y);
+                        for (let i = 0; i <= wire.width; i += 8) {
+                            ctx.lineTo(wx - wire.width/2 + i, game.groundY + y + Math.sin(i * 0.5) * 3);
+                        }
+                    }
+                    ctx.stroke();
+
+                    // Barbs
+                    ctx.fillStyle = '#444';
+                    for (let i = 0; i < wire.width; i += 12) {
+                        ctx.fillRect(wx - wire.width/2 + i, game.groundY - 18, 3, 3);
+                    }
+                }
+            }
+
+            // Bases
+            drawBase(50 - game.cameraX, true);
+            drawBase(game.battlefieldWidth - 50 - game.cameraX, false);
+
+            // Trenches
+            for (const trench of game.trenches) {
+                drawTrench(trench);
+            }
+
+            // Support effects (gas clouds, fire)
+            for (const effect of game.effects) {
+                if (effect.type === 'support_gas') {
+                    const progress = 1 - effect.elapsed / effect.duration;
+                    ctx.fillStyle = `rgba(100, 180, 100, ${0.25 * progress})`;
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, effect.y - 20, effect.radius * 1.2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (effect.type === 'support_artillery' || effect.type === 'support_mortar') {
+                    const progress = 1 - effect.elapsed / effect.duration;
+                    ctx.fillStyle = `rgba(255, 100, 50, ${0.2 * progress})`;
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, effect.y, effect.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Units (sorted by y for depth)
+            const sortedUnits = [...game.units].sort((a, b) => a.y - b.y);
+            for (const unit of sortedUnits) {
+                drawUnit(unit);
+            }
+
+            // Projectiles
+            for (const proj of game.projectiles) {
+                const px = proj.x - game.cameraX;
+                if (px > -20 && px < game.width + 20) {
+                    ctx.fillStyle = proj.type === 'tank' ? '#ff6600' : '#ffee00';
+                    ctx.beginPath();
+                    ctx.arc(px, proj.y, proj.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Trail
+                    ctx.strokeStyle = 'rgba(255, 200, 100, 0.5)';
+                    ctx.lineWidth = proj.size * 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(px, proj.y);
+                    ctx.lineTo(px - proj.vx * 0.02, proj.y - proj.vy * 0.02);
+                    ctx.stroke();
+                }
+            }
+
+            // Particle effects
+            for (const effect of game.effects) {
+                if (effect.type === 'particle') {
+                    ctx.globalAlpha = effect.life;
+                    ctx.fillStyle = effect.color;
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, effect.y, effect.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else if (effect.type === 'muzzle') {
+                    ctx.globalAlpha = effect.life;
+                    ctx.fillStyle = '#ffff88';
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, effect.y, 8 * effect.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else if (effect.type === 'hit') {
+                    ctx.globalAlpha = effect.life;
+                    ctx.fillStyle = '#ff4444';
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, effect.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else if (effect.type === 'target') {
+                    ctx.globalAlpha = effect.life * 0.7;
+                    ctx.strokeStyle = '#ff4444';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(effect.x - game.cameraX, game.groundY - 60);
+                    ctx.lineTo(effect.x - game.cameraX, game.groundY + 15);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(effect.x - game.cameraX, game.groundY, 15, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawBase(x, isPlayer) {
+            if (x < -100 || x > game.width + 100) return;
+
+            const ctx = game.ctx;
+
+            // Bunker
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(x - 35, game.groundY - 25, 70, 30);
+
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(x - 30, game.groundY - 20, 25, 15);
+
+            // Sandbags
+            ctx.fillStyle = '#5a4a3a';
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x - 30 + i * 18, game.groundY - 28, 10, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Flag pole
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x - 2, game.groundY - 90, 4, 90);
+
+            // Flag
+            ctx.fillStyle = isPlayer ?
+                (game.faction === 'british' ? '#1a3a6a' : '#4a4a4a') :
+                (game.faction === 'british' ? '#4a4a4a' : '#1a3a6a');
+
+            ctx.beginPath();
+            ctx.moveTo(x + 2, game.groundY - 90);
+            const wave = Math.sin(game.lastTime * 0.003) * 3;
+            ctx.lineTo(x + 45 + wave, game.groundY - 75 + wave);
+            ctx.lineTo(x + 2, game.groundY - 60);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawTrench(trench) {
+            const x = trench.x - game.cameraX;
+            if (x < -80 || x > game.width + 80) return;
+
+            const ctx = game.ctx;
+
+            // Trench depth
+            ctx.fillStyle = '#1a0a00';
+            ctx.fillRect(x - trench.width / 2, game.groundY, trench.width, 35);
+
+            // Trench walls
+            ctx.fillStyle = '#3a2a1a';
+            ctx.fillRect(x - trench.width / 2 - 8, game.groundY, 8, 30);
+            ctx.fillRect(x + trench.width / 2, game.groundY, 8, 30);
+
+            // Sandbag wall
+            const bagColor = trench.owner === 'player' ? '#6a5a4a' : '#5a5a5a';
+            ctx.fillStyle = bagColor;
+
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x - 25 + i * 12, game.groundY - 6, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Second row
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x - 19 + i * 12, game.groundY - 14, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Ownership flag
+            ctx.fillStyle = trench.owner === 'player' ? '#44aa44' : '#aa4444';
+            ctx.fillRect(x - 3, game.groundY - 35, 6, 20);
+            ctx.beginPath();
+            ctx.moveTo(x + 3, game.groundY - 35);
+            ctx.lineTo(x + 18, game.groundY - 30);
+            ctx.lineTo(x + 3, game.groundY - 25);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawUnit(unit) {
+            const x = unit.x - game.cameraX;
+            if (x < -50 || x > game.width + 50) return;
+
+            const ctx = game.ctx;
+            const inTrench = unit.state === 'inTrench';
+            const drawY = inTrench ? unit.y + 18 : unit.y;
+            const facing = unit.isPlayer ? 1 : -1;
+
+            // Animation bobbing
+            const bob = unit.state === 'advancing' ? Math.sin(unit.animFrame * 2) * 2 : 0;
+
+            if (unit.type === 'tank') {
+                // Tank shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, drawY + 8, 25, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Tank body
+                const tankColor = unit.isPlayer ? '#3a5a3a' : '#5a4a4a';
+                ctx.fillStyle = tankColor;
+                ctx.fillRect(x - 22, drawY - 12 + bob, 44, 18);
+
+                // Track details
+                ctx.fillStyle = '#2a2a2a';
+                ctx.fillRect(x - 24, drawY + 4 + bob, 48, 8);
+                for (let i = 0; i < 6; i++) {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.beginPath();
+                    ctx.arc(x - 18 + i * 8, drawY + 8 + bob, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Turret
+                ctx.fillStyle = unit.isPlayer ? '#2a4a2a' : '#4a3a3a';
+                ctx.fillRect(x - 12, drawY - 22 + bob, 24, 12);
+
+                // Cannon
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(x + facing * 12, drawY - 19 + bob, facing * 25, 5);
+
+            } else {
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                ctx.beginPath();
+                ctx.ellipse(x, drawY + 2, 8, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Body
+                const bodyColor = unit.isPlayer ?
+                    (game.faction === 'british' ? '#4a5a4a' : '#5a5a5a') :
+                    (game.faction === 'british' ? '#5a5a5a' : '#4a5a4a');
+                ctx.fillStyle = bodyColor;
+                ctx.fillRect(x - 5, drawY - 18 + bob, 10, 16);
+
+                // Legs (if advancing)
+                if (unit.state === 'advancing') {
+                    const legAnim = Math.sin(unit.animFrame * 4) * 4;
+                    ctx.fillRect(x - 4 + legAnim, drawY - 2, 3, 6);
+                    ctx.fillRect(x + 1 - legAnim, drawY - 2, 3, 6);
+                } else {
+                    ctx.fillRect(x - 4, drawY - 2, 3, 5);
+                    ctx.fillRect(x + 1, drawY - 2, 3, 5);
+                }
+
+                // Head
+                ctx.fillStyle = '#d4a574';
+                ctx.beginPath();
+                ctx.arc(x, drawY - 23 + bob, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Helmet
+                const helmetColor = unit.isPlayer ?
+                    (game.faction === 'british' ? '#3a4a3a' : '#4a4a4a') :
+                    (game.faction === 'british' ? '#4a4a4a' : '#3a4a3a');
+                ctx.fillStyle = helmetColor;
+                ctx.beginPath();
+                ctx.arc(x, drawY - 25 + bob, 6, Math.PI, 0);
+                ctx.fill();
+
+                // Weapon
+                ctx.fillStyle = '#3a2a1a';
+                const weaponY = drawY - 13 + bob;
+
+                if (unit.type === 'machinegunner') {
+                    ctx.fillRect(x, weaponY, facing * 28, 3);
+                    ctx.fillRect(x + facing * 5, weaponY - 3, 8, 3);
+                } else if (unit.type === 'sniper') {
+                    ctx.fillRect(x, weaponY - 5, facing * 32, 2);
+                    ctx.fillRect(x + facing * 20, weaponY - 8, 6, 3);
+                } else if (unit.type === 'assault') {
+                    ctx.fillRect(x, weaponY, facing * 18, 3);
+                    // Grenade
+                    ctx.fillStyle = '#2a3a2a';
+                    ctx.beginPath();
+                    ctx.arc(x - facing * 8, weaponY + 5, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(x, weaponY, facing * 20, 2);
+                }
+
+                // Officer star
+                if (unit.type === 'officer') {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(x, drawY - 33 + bob, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Morale aura
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, drawY - 10 + bob, 25 + Math.sin(game.lastTime * 0.005) * 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Sniper scope glint
+                if (unit.type === 'sniper' && unit.state === 'firing') {
+                    ctx.fillStyle = '#88ccff';
+                    ctx.beginPath();
+                    ctx.arc(x + facing * 26, weaponY - 5, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Health bar
+            if (unit.hp < unit.maxHp) {
+                const barY = unit.type === 'tank' ? drawY - 30 : drawY - 38;
+                const barWidth = unit.type === 'tank' ? 40 : 26;
+
+                ctx.fillStyle = '#222';
+                ctx.fillRect(x - barWidth/2, barY + bob, barWidth, 4);
+
+                const hpPercent = unit.hp / unit.maxHp;
+                ctx.fillStyle = hpPercent > 0.5 ? '#44cc44' : (hpPercent > 0.25 ? '#cccc44' : '#cc4444');
+                ctx.fillRect(x - barWidth/2, barY + bob, barWidth * hpPercent, 4);
+            }
+        }
+
+        // ============ START ============
+        init();
+    </script>
+</body>
+</html>
