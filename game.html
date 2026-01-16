@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Pin Hero - Puzzle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        #header {
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+        }
+
+        #levelDisplay {
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #restartBtn {
+            background: linear-gradient(180deg, #ff6b6b 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+
+        #restartBtn:active {
+            transform: scale(0.95);
+        }
+
+        #canvasWrapper {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        #gameCanvas {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1);
+            touch-action: none;
+        }
+
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            border: 3px solid #ffd700;
+        }
+
+        #message.win {
+            border-color: #2ecc71;
+        }
+
+        #message.lose {
+            border-color: #e74c3c;
+        }
+
+        #message .subtitle {
+            font-size: 16px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        #nextBtn {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #nextBtn:active {
+            transform: scale(0.95);
+        }
+
+        #hint {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #levelSelect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        #levelSelect h1 {
+            color: #ffd700;
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #levelSelect .subtitle {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 30px;
+        }
+
+        #levelGrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+            max-width: 400px;
+        }
+
+        .levelBtn {
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            border: none;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .levelBtn.unlocked {
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .levelBtn.completed {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+
+        .levelBtn.locked {
+            background: linear-gradient(180deg, #7f8c8d 0%, #95a5a6 100%);
+            color: rgba(255,255,255,0.5);
+        }
+
+        .levelBtn:active {
+            transform: scale(0.95);
+        }
+
+        #playBtn {
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            padding: 20px 60px;
+            border-radius: 35px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        #menuBtn {
+            background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="levelSelect">
+        <h1>PIN HERO</h1>
+        <p class="subtitle">Pull the pins to save the hero!</p>
+        <div id="levelGrid"></div>
+        <button id="playBtn">PLAY</button>
+    </div>
+
+    <div id="gameContainer">
+        <div id="header">
+            <span id="levelDisplay">Level 1</span>
+            <button id="menuBtn">MENU</button>
+            <button id="restartBtn">RESTART</button>
+        </div>
+        <div id="canvasWrapper">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <div id="hint">Drag the pins in the right order!</div>
+    </div>
+
+    <div id="message">
+        <span id="messageText"></span>
+        <div class="subtitle" id="messageSubtitle"></div>
+        <button id="nextBtn">NEXT LEVEL</button>
+    </div>
+
+    <script>
+        // Game Constants
+        const COLORS = {
+            pin: '#c0c0c0',
+            pinHandle: '#ffd700',
+            pinShadow: '#808080',
+            hero: '#3498db',
+            heroFace: '#f39c12',
+            treasure: '#f1c40f',
+            lava: '#e74c3c',
+            water: '#3498db',
+            enemy: '#9b59b6',
+            wall: '#7f8c8d',
+            safe: '#2ecc71',
+            poison: '#27ae60',
+            acid: '#1abc9c',
+            spikes: '#34495e'
+        };
+
+        // Game State
+        let canvas, ctx;
+        let gameWidth, gameHeight;
+        let currentLevel = 0;
+        let levelCompleted = [];
+        let gameObjects = [];
+        let pins = [];
+        let particles = [];
+        let draggingPin = null;
+        let dragStartY = 0;
+        let gameState = 'playing'; // playing, won, lost
+        let animationId;
+
+        // Level Definitions - Each level is a puzzle
+        const levels = [
+            // Level 1: Simple introduction - pull pin to get treasure
+            {
+                hint: "Pull the pin to collect the treasure!",
+                objects: [
+                    { type: 'hero', x: 0.5, y: 0.2, w: 0.15, h: 0.15 },
+                    { type: 'treasure', x: 0.5, y: 0.75, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.5, y: 0.9, w: 0.4, h: 0.15 }
+                ],
+                pins: [
+                    { x: 0.5, y: 0.45, horizontal: true, length: 0.6 }
+                ],
+                walls: [
+                    { x: 0.2, y: 0.3, w: 0.04, h: 0.5 },
+                    { x: 0.8, y: 0.3, w: 0.04, h: 0.5 }
+                ]
+            },
+            // Level 2: Avoid the lava
+            {
+                hint: "Timing matters! Avoid the lava!",
+                objects: [
+                    { type: 'hero', x: 0.3, y: 0.15, w: 0.15, h: 0.15 },
+                    { type: 'lava', x: 0.7, y: 0.65, w: 0.25, h: 0.2 },
+                    { type: 'treasure', x: 0.3, y: 0.75, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.3, y: 0.9, w: 0.3, h: 0.12 }
+                ],
+                pins: [
+                    { x: 0.3, y: 0.38, horizontal: true, length: 0.35 },
+                    { x: 0.7, y: 0.5, horizontal: true, length: 0.35 }
+                ],
+                walls: [
+                    { x: 0.12, y: 0.25, w: 0.04, h: 0.55 },
+                    { x: 0.48, y: 0.25, w: 0.04, h: 0.35 },
+                    { x: 0.52, y: 0.35, w: 0.04, h: 0.45 },
+                    { x: 0.88, y: 0.35, w: 0.04, h: 0.45 }
+                ]
+            },
+            // Level 3: Drop lava on enemy
+            {
+                hint: "Drop the lava on the enemy first!",
+                objects: [
+                    { type: 'hero', x: 0.3, y: 0.15, w: 0.15, h: 0.15 },
+                    { type: 'lava', x: 0.7, y: 0.2, w: 0.2, h: 0.15 },
+                    { type: 'enemy', x: 0.7, y: 0.7, w: 0.15, h: 0.15 },
+                    { type: 'treasure', x: 0.5, y: 0.85, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.5, y: 0.92, w: 0.5, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.7, y: 0.42, horizontal: true, length: 0.35 },
+                    { x: 0.3, y: 0.38, horizontal: true, length: 0.35 }
+                ],
+                walls: [
+                    { x: 0.12, y: 0.25, w: 0.04, h: 0.5 },
+                    { x: 0.48, y: 0.25, w: 0.04, h: 0.5 },
+                    { x: 0.52, y: 0.2, w: 0.04, h: 0.55 },
+                    { x: 0.88, y: 0.2, w: 0.04, h: 0.55 }
+                ]
+            },
+            // Level 4: Water puts out lava
+            {
+                hint: "Water neutralizes lava!",
+                objects: [
+                    { type: 'hero', x: 0.5, y: 0.12, w: 0.15, h: 0.15 },
+                    { type: 'water', x: 0.25, y: 0.4, w: 0.18, h: 0.12 },
+                    { type: 'lava', x: 0.5, y: 0.55, w: 0.25, h: 0.12 },
+                    { type: 'treasure', x: 0.5, y: 0.8, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.5, y: 0.92, w: 0.4, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.25, y: 0.55, horizontal: true, length: 0.25 },
+                    { x: 0.5, y: 0.35, horizontal: true, length: 0.5 }
+                ],
+                walls: [
+                    { x: 0.12, y: 0.35, w: 0.04, h: 0.25 },
+                    { x: 0.38, y: 0.35, w: 0.04, h: 0.25 },
+                    { x: 0.25, y: 0.2, w: 0.04, h: 0.6 },
+                    { x: 0.75, y: 0.2, w: 0.04, h: 0.6 }
+                ]
+            },
+            // Level 5: Multiple treasures
+            {
+                hint: "Collect all the treasure!",
+                objects: [
+                    { type: 'hero', x: 0.5, y: 0.1, w: 0.15, h: 0.15 },
+                    { type: 'treasure', x: 0.25, y: 0.5, w: 0.1, h: 0.1 },
+                    { type: 'treasure', x: 0.75, y: 0.5, w: 0.1, h: 0.1 },
+                    { type: 'treasure', x: 0.5, y: 0.75, w: 0.1, h: 0.1 },
+                    { type: 'safe', x: 0.5, y: 0.9, w: 0.6, h: 0.12 }
+                ],
+                pins: [
+                    { x: 0.5, y: 0.32, horizontal: true, length: 0.7 }
+                ],
+                walls: [
+                    { x: 0.15, y: 0.25, w: 0.04, h: 0.55 },
+                    { x: 0.85, y: 0.25, w: 0.04, h: 0.55 }
+                ]
+            },
+            // Level 6: Maze with lava
+            {
+                hint: "Navigate through the maze!",
+                objects: [
+                    { type: 'hero', x: 0.2, y: 0.1, w: 0.12, h: 0.12 },
+                    { type: 'lava', x: 0.5, y: 0.45, w: 0.15, h: 0.1 },
+                    { type: 'lava', x: 0.8, y: 0.7, w: 0.15, h: 0.1 },
+                    { type: 'treasure', x: 0.2, y: 0.8, w: 0.1, h: 0.1 },
+                    { type: 'safe', x: 0.2, y: 0.92, w: 0.25, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.2, y: 0.28, horizontal: true, length: 0.25 },
+                    { x: 0.5, y: 0.28, horizontal: true, length: 0.25 },
+                    { x: 0.5, y: 0.6, horizontal: true, length: 0.25 }
+                ],
+                walls: [
+                    { x: 0.08, y: 0.2, w: 0.04, h: 0.65 },
+                    { x: 0.33, y: 0.2, w: 0.04, h: 0.25 },
+                    { x: 0.33, y: 0.4, w: 0.04, h: 0.45 },
+                    { x: 0.37, y: 0.2, w: 0.04, h: 0.15 },
+                    { x: 0.63, y: 0.2, w: 0.04, h: 0.15 },
+                    { x: 0.63, y: 0.4, w: 0.04, h: 0.25 },
+                    { x: 0.37, y: 0.55, w: 0.04, h: 0.3 },
+                    { x: 0.63, y: 0.7, w: 0.35, h: 0.04 }
+                ]
+            },
+            // Level 7: Enemy patrol
+            {
+                hint: "Time your escape carefully!",
+                objects: [
+                    { type: 'hero', x: 0.5, y: 0.1, w: 0.14, h: 0.14 },
+                    { type: 'enemy', x: 0.25, y: 0.55, w: 0.13, h: 0.13 },
+                    { type: 'enemy', x: 0.75, y: 0.55, w: 0.13, h: 0.13 },
+                    { type: 'lava', x: 0.5, y: 0.55, w: 0.15, h: 0.1 },
+                    { type: 'treasure', x: 0.5, y: 0.78, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.5, y: 0.92, w: 0.35, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.25, y: 0.38, horizontal: true, length: 0.2 },
+                    { x: 0.75, y: 0.38, horizontal: true, length: 0.2 },
+                    { x: 0.5, y: 0.3, horizontal: true, length: 0.3 }
+                ],
+                walls: [
+                    { x: 0.15, y: 0.3, w: 0.04, h: 0.4 },
+                    { x: 0.35, y: 0.3, w: 0.04, h: 0.4 },
+                    { x: 0.65, y: 0.3, w: 0.04, h: 0.4 },
+                    { x: 0.85, y: 0.3, w: 0.04, h: 0.4 },
+                    { x: 0.35, y: 0.2, w: 0.04, h: 0.6 },
+                    { x: 0.65, y: 0.2, w: 0.04, h: 0.6 }
+                ]
+            },
+            // Level 8: Complex puzzle
+            {
+                hint: "Think before you pull!",
+                objects: [
+                    { type: 'hero', x: 0.25, y: 0.1, w: 0.13, h: 0.13 },
+                    { type: 'water', x: 0.75, y: 0.1, w: 0.15, h: 0.1 },
+                    { type: 'lava', x: 0.5, y: 0.45, w: 0.2, h: 0.1 },
+                    { type: 'enemy', x: 0.75, y: 0.7, w: 0.12, h: 0.12 },
+                    { type: 'treasure', x: 0.25, y: 0.75, w: 0.1, h: 0.1 },
+                    { type: 'safe', x: 0.25, y: 0.9, w: 0.3, h: 0.12 }
+                ],
+                pins: [
+                    { x: 0.75, y: 0.28, horizontal: true, length: 0.25 },
+                    { x: 0.5, y: 0.35, horizontal: true, length: 0.25 },
+                    { x: 0.25, y: 0.3, horizontal: true, length: 0.25 },
+                    { x: 0.75, y: 0.55, horizontal: true, length: 0.25 }
+                ],
+                walls: [
+                    { x: 0.1, y: 0.22, w: 0.04, h: 0.6 },
+                    { x: 0.4, y: 0.22, w: 0.04, h: 0.6 },
+                    { x: 0.38, y: 0.08, w: 0.04, h: 0.25 },
+                    { x: 0.62, y: 0.08, w: 0.04, h: 0.25 },
+                    { x: 0.62, y: 0.35, w: 0.04, h: 0.25 },
+                    { x: 0.88, y: 0.35, w: 0.04, h: 0.5 },
+                    { x: 0.62, y: 0.55, w: 0.04, h: 0.3 }
+                ]
+            },
+            // Level 9: Chain reaction
+            {
+                hint: "Create a chain reaction!",
+                objects: [
+                    { type: 'hero', x: 0.2, y: 0.08, w: 0.12, h: 0.12 },
+                    { type: 'water', x: 0.5, y: 0.08, w: 0.15, h: 0.1 },
+                    { type: 'lava', x: 0.8, y: 0.3, w: 0.15, h: 0.12 },
+                    { type: 'lava', x: 0.5, y: 0.55, w: 0.2, h: 0.1 },
+                    { type: 'enemy', x: 0.2, y: 0.55, w: 0.12, h: 0.12 },
+                    { type: 'treasure', x: 0.2, y: 0.8, w: 0.1, h: 0.1 },
+                    { type: 'safe', x: 0.2, y: 0.92, w: 0.25, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.5, y: 0.22, horizontal: true, length: 0.25 },
+                    { x: 0.8, y: 0.48, horizontal: true, length: 0.2 },
+                    { x: 0.5, y: 0.42, horizontal: true, length: 0.25 },
+                    { x: 0.2, y: 0.28, horizontal: true, length: 0.2 }
+                ],
+                walls: [
+                    { x: 0.08, y: 0.18, w: 0.04, h: 0.65 },
+                    { x: 0.32, y: 0.18, w: 0.04, h: 0.65 },
+                    { x: 0.38, y: 0.05, w: 0.04, h: 0.22 },
+                    { x: 0.62, y: 0.05, w: 0.04, h: 0.42 },
+                    { x: 0.38, y: 0.35, w: 0.04, h: 0.25 },
+                    { x: 0.68, y: 0.25, w: 0.04, h: 0.28 },
+                    { x: 0.92, y: 0.25, w: 0.04, h: 0.28 }
+                ]
+            },
+            // Level 10: Ultimate challenge
+            {
+                hint: "The ultimate challenge!",
+                objects: [
+                    { type: 'hero', x: 0.15, y: 0.08, w: 0.12, h: 0.12 },
+                    { type: 'water', x: 0.85, y: 0.08, w: 0.12, h: 0.1 },
+                    { type: 'lava', x: 0.5, y: 0.25, w: 0.15, h: 0.1 },
+                    { type: 'lava', x: 0.15, y: 0.5, w: 0.15, h: 0.1 },
+                    { type: 'enemy', x: 0.5, y: 0.5, w: 0.12, h: 0.12 },
+                    { type: 'enemy', x: 0.85, y: 0.5, w: 0.12, h: 0.12 },
+                    { type: 'treasure', x: 0.5, y: 0.75, w: 0.12, h: 0.12 },
+                    { type: 'treasure', x: 0.15, y: 0.75, w: 0.1, h: 0.1 },
+                    { type: 'safe', x: 0.35, y: 0.92, w: 0.5, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.85, y: 0.22, horizontal: true, length: 0.18 },
+                    { x: 0.5, y: 0.4, horizontal: true, length: 0.25 },
+                    { x: 0.15, y: 0.28, horizontal: true, length: 0.18 },
+                    { x: 0.85, y: 0.38, horizontal: true, length: 0.18 },
+                    { x: 0.15, y: 0.65, horizontal: true, length: 0.18 }
+                ],
+                walls: [
+                    { x: 0.04, y: 0.18, w: 0.04, h: 0.65 },
+                    { x: 0.27, y: 0.18, w: 0.04, h: 0.35 },
+                    { x: 0.27, y: 0.58, w: 0.04, h: 0.25 },
+                    { x: 0.36, y: 0.18, w: 0.04, h: 0.25 },
+                    { x: 0.64, y: 0.18, w: 0.04, h: 0.25 },
+                    { x: 0.36, y: 0.35, w: 0.04, h: 0.35 },
+                    { x: 0.64, y: 0.35, w: 0.04, h: 0.35 },
+                    { x: 0.73, y: 0.05, w: 0.04, h: 0.2 },
+                    { x: 0.96, y: 0.05, w: 0.04, h: 0.55 },
+                    { x: 0.73, y: 0.3, w: 0.04, h: 0.35 }
+                ]
+            },
+            // Level 11: Acid pools
+            {
+                hint: "Acid dissolves everything - use wisely!",
+                objects: [
+                    { type: 'hero', x: 0.5, y: 0.08, w: 0.14, h: 0.14 },
+                    { type: 'acid', x: 0.25, y: 0.35, w: 0.18, h: 0.1 },
+                    { type: 'enemy', x: 0.75, y: 0.55, w: 0.14, h: 0.14 },
+                    { type: 'enemy', x: 0.25, y: 0.7, w: 0.14, h: 0.14 },
+                    { type: 'treasure', x: 0.5, y: 0.78, w: 0.12, h: 0.12 },
+                    { type: 'safe', x: 0.5, y: 0.92, w: 0.4, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.25, y: 0.5, horizontal: true, length: 0.22 },
+                    { x: 0.5, y: 0.28, horizontal: true, length: 0.35 },
+                    { x: 0.75, y: 0.42, horizontal: true, length: 0.22 }
+                ],
+                walls: [
+                    { x: 0.14, y: 0.3, w: 0.04, h: 0.25 },
+                    { x: 0.36, y: 0.3, w: 0.04, h: 0.55 },
+                    { x: 0.32, y: 0.18, w: 0.04, h: 0.65 },
+                    { x: 0.68, y: 0.18, w: 0.04, h: 0.65 },
+                    { x: 0.64, y: 0.35, w: 0.04, h: 0.4 },
+                    { x: 0.86, y: 0.35, w: 0.04, h: 0.4 }
+                ]
+            },
+            // Level 12: Final boss
+            {
+                hint: "Defeat the boss and claim victory!",
+                objects: [
+                    { type: 'hero', x: 0.15, y: 0.08, w: 0.12, h: 0.12 },
+                    { type: 'water', x: 0.5, y: 0.08, w: 0.15, h: 0.1 },
+                    { type: 'acid', x: 0.85, y: 0.08, w: 0.12, h: 0.1 },
+                    { type: 'lava', x: 0.15, y: 0.4, w: 0.15, h: 0.1 },
+                    { type: 'lava', x: 0.5, y: 0.55, w: 0.18, h: 0.1 },
+                    { type: 'enemy', x: 0.85, y: 0.4, w: 0.12, h: 0.12 },
+                    { type: 'enemy', x: 0.5, y: 0.4, w: 0.15, h: 0.15, boss: true },
+                    { type: 'treasure', x: 0.5, y: 0.78, w: 0.15, h: 0.15 },
+                    { type: 'safe', x: 0.5, y: 0.93, w: 0.5, h: 0.1 }
+                ],
+                pins: [
+                    { x: 0.5, y: 0.22, horizontal: true, length: 0.25 },
+                    { x: 0.85, y: 0.22, horizontal: true, length: 0.18 },
+                    { x: 0.15, y: 0.28, horizontal: true, length: 0.18 },
+                    { x: 0.5, y: 0.72, horizontal: true, length: 0.35 },
+                    { x: 0.85, y: 0.58, horizontal: true, length: 0.18 }
+                ],
+                walls: [
+                    { x: 0.04, y: 0.18, w: 0.04, h: 0.4 },
+                    { x: 0.27, y: 0.18, w: 0.04, h: 0.4 },
+                    { x: 0.36, y: 0.05, w: 0.04, h: 0.2 },
+                    { x: 0.64, y: 0.05, w: 0.04, h: 0.2 },
+                    { x: 0.32, y: 0.3, w: 0.04, h: 0.5 },
+                    { x: 0.68, y: 0.3, w: 0.04, h: 0.5 },
+                    { x: 0.73, y: 0.05, w: 0.04, h: 0.2 },
+                    { x: 0.96, y: 0.05, w: 0.04, h: 0.6 },
+                    { x: 0.73, y: 0.35, w: 0.04, h: 0.3 }
+                ]
+            }
+        ];
+
+        // Initialize game
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Set up canvas size
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Event listeners
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseEnd);
+
+            document.getElementById('restartBtn').addEventListener('click', restartLevel);
+            document.getElementById('nextBtn').addEventListener('click', nextLevel);
+            document.getElementById('playBtn').addEventListener('click', startGame);
+            document.getElementById('menuBtn').addEventListener('click', showMenu);
+
+            // Load progress
+            loadProgress();
+            updateLevelGrid();
+
+            // Show level select
+            document.getElementById('levelSelect').style.display = 'flex';
+            document.getElementById('gameContainer').style.display = 'none';
+        }
+
+        function resizeCanvas() {
+            const wrapper = document.getElementById('canvasWrapper');
+            const maxWidth = Math.min(wrapper.clientWidth - 20, 400);
+            const maxHeight = Math.min(wrapper.clientHeight - 20, 600);
+
+            // Maintain aspect ratio
+            const aspectRatio = 2/3;
+
+            if (maxWidth / maxHeight > aspectRatio) {
+                gameHeight = maxHeight;
+                gameWidth = maxHeight * aspectRatio;
+            } else {
+                gameWidth = maxWidth;
+                gameHeight = maxWidth / aspectRatio;
+            }
+
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+
+            if (gameState === 'playing') {
+                draw();
+            }
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('pinHeroProgress');
+            if (saved) {
+                levelCompleted = JSON.parse(saved);
+            } else {
+                levelCompleted = new Array(levels.length).fill(false);
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('pinHeroProgress', JSON.stringify(levelCompleted));
+        }
+
+        function updateLevelGrid() {
+            const grid = document.getElementById('levelGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < levels.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'levelBtn';
+                btn.textContent = i + 1;
+
+                const isUnlocked = i === 0 || levelCompleted[i - 1];
+
+                if (levelCompleted[i]) {
+                    btn.classList.add('completed');
+                } else if (isUnlocked) {
+                    btn.classList.add('unlocked');
+                } else {
+                    btn.classList.add('locked');
+                }
+
+                if (isUnlocked) {
+                    btn.addEventListener('click', () => {
+                        currentLevel = i;
+                        startGame();
+                    });
+                }
+
+                grid.appendChild(btn);
+            }
+        }
+
+        function showMenu() {
+            updateLevelGrid();
+            document.getElementById('levelSelect').style.display = 'flex';
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('message').style.display = 'none';
+            cancelAnimationFrame(animationId);
+        }
+
+        function startGame() {
+            document.getElementById('levelSelect').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'flex';
+            resizeCanvas();
+            loadLevel(currentLevel);
+        }
+
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex];
+            gameState = 'playing';
+            particles = [];
+
+            document.getElementById('levelDisplay').textContent = `Level ${levelIndex + 1}`;
+            document.getElementById('hint').textContent = level.hint;
+            document.getElementById('message').style.display = 'none';
+
+            // Create game objects from level data
+            gameObjects = [];
+            pins = [];
+
+            // Add walls
+            if (level.walls) {
+                level.walls.forEach(wall => {
+                    gameObjects.push({
+                        type: 'wall',
+                        x: wall.x * gameWidth,
+                        y: wall.y * gameHeight,
+                        width: wall.w * gameWidth,
+                        height: wall.h * gameHeight,
+                        static: true
+                    });
+                });
+            }
+
+            // Add objects
+            level.objects.forEach(obj => {
+                gameObjects.push({
+                    type: obj.type,
+                    x: obj.x * gameWidth,
+                    y: obj.y * gameHeight,
+                    width: obj.w * gameWidth,
+                    height: obj.h * gameHeight,
+                    vx: 0,
+                    vy: 0,
+                    static: obj.type === 'safe' || obj.type === 'wall',
+                    collected: false,
+                    boss: obj.boss || false
+                });
+            });
+
+            // Add pins
+            level.pins.forEach(pin => {
+                pins.push({
+                    x: pin.x * gameWidth,
+                    y: pin.y * gameHeight,
+                    length: pin.length * gameWidth,
+                    horizontal: pin.horizontal,
+                    pulled: false,
+                    pullProgress: 0,
+                    handleRadius: 12
+                });
+            });
+
+            // Start game loop
+            cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (gameState === 'playing') {
+                update();
+            }
+            draw();
+            updateParticles();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            const gravity = 0.4;
+            const friction = 0.98;
+
+            // Update physics for non-static objects
+            gameObjects.forEach(obj => {
+                if (obj.static || obj.collected) return;
+
+                // Apply gravity
+                obj.vy += gravity;
+                obj.vy *= friction;
+                obj.vx *= friction;
+
+                // Move object
+                obj.x += obj.vx;
+                obj.y += obj.vy;
+
+                // Collision with walls and other static objects
+                gameObjects.forEach(other => {
+                    if (other === obj || !other.static || other.type === 'safe') return;
+
+                    if (checkCollision(obj, other)) {
+                        resolveCollision(obj, other);
+                    }
+                });
+
+                // Collision with pins
+                pins.forEach(pin => {
+                    if (pin.pulled) return;
+
+                    const pinRect = getPinRect(pin);
+                    if (checkCollision(obj, pinRect)) {
+                        resolveCollision(obj, pinRect);
+                    }
+                });
+
+                // Keep in bounds
+                if (obj.x - obj.width/2 < 0) {
+                    obj.x = obj.width/2;
+                    obj.vx = 0;
+                }
+                if (obj.x + obj.width/2 > gameWidth) {
+                    obj.x = gameWidth - obj.width/2;
+                    obj.vx = 0;
+                }
+                if (obj.y + obj.height/2 > gameHeight) {
+                    obj.y = gameHeight - obj.height/2;
+                    obj.vy = 0;
+                }
+            });
+
+            // Check interactions between objects
+            checkInteractions();
+        }
+
+        function getPinRect(pin) {
+            if (pin.horizontal) {
+                return {
+                    x: pin.x,
+                    y: pin.y,
+                    width: pin.length,
+                    height: 12,
+                    static: true
+                };
+            } else {
+                return {
+                    x: pin.x,
+                    y: pin.y,
+                    width: 12,
+                    height: pin.length,
+                    static: true
+                };
+            }
+        }
+
+        function checkCollision(a, b) {
+            const aLeft = a.x - a.width/2;
+            const aRight = a.x + a.width/2;
+            const aTop = a.y - a.height/2;
+            const aBottom = a.y + a.height/2;
+
+            const bLeft = b.x - b.width/2;
+            const bRight = b.x + b.width/2;
+            const bTop = b.y - b.height/2;
+            const bBottom = b.y + b.height/2;
+
+            return aLeft < bRight && aRight > bLeft && aTop < bBottom && aBottom > bTop;
+        }
+
+        function resolveCollision(obj, obstacle) {
+            const objBottom = obj.y + obj.height/2;
+            const objTop = obj.y - obj.height/2;
+            const objLeft = obj.x - obj.width/2;
+            const objRight = obj.x + obj.width/2;
+
+            const obsTop = obstacle.y - obstacle.height/2;
+            const obsBottom = obstacle.y + obstacle.height/2;
+            const obsLeft = obstacle.x - obstacle.width/2;
+            const obsRight = obstacle.x + obstacle.width/2;
+
+            // Calculate overlap on each axis
+            const overlapTop = objBottom - obsTop;
+            const overlapBottom = obsBottom - objTop;
+            const overlapLeft = objRight - obsLeft;
+            const overlapRight = obsRight - objLeft;
+
+            // Find minimum overlap
+            const minOverlap = Math.min(overlapTop, overlapBottom, overlapLeft, overlapRight);
+
+            if (minOverlap === overlapTop && obj.vy > 0) {
+                obj.y = obsTop - obj.height/2;
+                obj.vy = 0;
+            } else if (minOverlap === overlapBottom && obj.vy < 0) {
+                obj.y = obsBottom + obj.height/2;
+                obj.vy = 0;
+            } else if (minOverlap === overlapLeft && obj.vx > 0) {
+                obj.x = obsLeft - obj.width/2;
+                obj.vx = 0;
+            } else if (minOverlap === overlapRight && obj.vx < 0) {
+                obj.x = obsRight + obj.width/2;
+                obj.vx = 0;
+            }
+        }
+
+        function checkInteractions() {
+            const hero = gameObjects.find(o => o.type === 'hero' && !o.collected);
+            if (!hero) return;
+
+            gameObjects.forEach(obj => {
+                if (obj === hero || obj.collected) return;
+
+                if (checkCollision(hero, obj)) {
+                    switch(obj.type) {
+                        case 'treasure':
+                            obj.collected = true;
+                            createParticles(obj.x, obj.y, '#ffd700', 20);
+                            break;
+                        case 'lava':
+                            if (!obj.neutralized) {
+                                gameOver(false);
+                            }
+                            break;
+                        case 'acid':
+                            gameOver(false);
+                            break;
+                        case 'enemy':
+                            if (!obj.defeated) {
+                                gameOver(false);
+                            }
+                            break;
+                        case 'safe':
+                            checkWinCondition();
+                            break;
+                    }
+                }
+
+                // Water neutralizes lava
+                if (obj.type === 'water' && !obj.collected) {
+                    gameObjects.forEach(other => {
+                        if (other.type === 'lava' && !other.neutralized && checkCollision(obj, other)) {
+                            other.neutralized = true;
+                            obj.collected = true;
+                            createParticles(other.x, other.y, '#87CEEB', 15);
+                        }
+                    });
+                }
+
+                // Lava kills enemies
+                if (obj.type === 'lava' && !obj.neutralized && !obj.collected) {
+                    gameObjects.forEach(other => {
+                        if (other.type === 'enemy' && !other.defeated && checkCollision(obj, other)) {
+                            other.defeated = true;
+                            createParticles(other.x, other.y, '#e74c3c', 15);
+                        }
+                    });
+                }
+
+                // Acid kills enemies
+                if (obj.type === 'acid' && !obj.collected) {
+                    gameObjects.forEach(other => {
+                        if (other.type === 'enemy' && !other.defeated && checkCollision(obj, other)) {
+                            other.defeated = true;
+                            obj.collected = true;
+                            createParticles(other.x, other.y, '#1abc9c', 15);
+                        }
+                    });
+                }
+            });
+        }
+
+        function checkWinCondition() {
+            const hero = gameObjects.find(o => o.type === 'hero');
+            const allTreasuresCollected = gameObjects
+                .filter(o => o.type === 'treasure')
+                .every(t => t.collected);
+            const allEnemiesDefeated = gameObjects
+                .filter(o => o.type === 'enemy')
+                .every(e => e.defeated);
+
+            if (allTreasuresCollected && allEnemiesDefeated) {
+                gameOver(true);
+            }
+        }
+
+        function gameOver(won) {
+            gameState = won ? 'won' : 'lost';
+
+            const message = document.getElementById('message');
+            const messageText = document.getElementById('messageText');
+            const messageSubtitle = document.getElementById('messageSubtitle');
+            const nextBtn = document.getElementById('nextBtn');
+
+            message.className = won ? 'win' : 'lose';
+
+            if (won) {
+                messageText.textContent = 'VICTORY!';
+                messageSubtitle.textContent = 'Hero saved!';
+                nextBtn.style.display = currentLevel < levels.length - 1 ? 'inline-block' : 'none';
+
+                if (currentLevel === levels.length - 1) {
+                    messageSubtitle.textContent = 'You completed all levels!';
+                    nextBtn.textContent = 'PLAY AGAIN';
+                    nextBtn.style.display = 'inline-block';
+                }
+
+                levelCompleted[currentLevel] = true;
+                saveProgress();
+
+                // Victory particles
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        createParticles(Math.random() * gameWidth, Math.random() * gameHeight, '#ffd700', 10);
+                    }, i * 100);
+                }
+            } else {
+                messageText.textContent = 'FAILED!';
+                messageSubtitle.textContent = 'Try again!';
+                nextBtn.textContent = 'RETRY';
+                nextBtn.style.display = 'inline-block';
+            }
+
+            message.style.display = 'block';
+        }
+
+        function restartLevel() {
+            loadLevel(currentLevel);
+        }
+
+        function nextLevel() {
+            if (gameState === 'lost') {
+                loadLevel(currentLevel);
+            } else if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                loadLevel(currentLevel);
+            } else {
+                currentLevel = 0;
+                loadLevel(currentLevel);
+            }
+        }
+
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10 - 3,
+                    radius: Math.random() * 6 + 2,
+                    color: color,
+                    alpha: 1,
+                    decay: Math.random() * 0.02 + 0.02
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2;
+                p.alpha -= p.decay;
+                return p.alpha > 0;
+            });
+        }
+
+        function draw() {
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, gameHeight);
+            gradient.addColorStop(0, '#2c3e50');
+            gradient.addColorStop(1, '#1a252f');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+            // Draw grid pattern
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            const gridSize = 30;
+            for (let x = 0; x < gameWidth; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, gameHeight);
+                ctx.stroke();
+            }
+            for (let y = 0; y < gameHeight; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(gameWidth, y);
+                ctx.stroke();
+            }
+
+            // Draw walls
+            gameObjects.filter(o => o.type === 'wall').forEach(drawWall);
+
+            // Draw safe zone
+            gameObjects.filter(o => o.type === 'safe').forEach(drawSafeZone);
+
+            // Draw pins
+            pins.forEach(drawPin);
+
+            // Draw game objects
+            gameObjects.filter(o => o.type !== 'wall' && o.type !== 'safe').forEach(obj => {
+                if (obj.collected && obj.type === 'treasure') return;
+                if (obj.defeated && obj.type === 'enemy') return;
+                if (obj.neutralized && obj.type === 'lava') return;
+                if (obj.collected && (obj.type === 'water' || obj.type === 'acid')) return;
+
+                switch(obj.type) {
+                    case 'hero': drawHero(obj); break;
+                    case 'treasure': drawTreasure(obj); break;
+                    case 'lava': drawLava(obj); break;
+                    case 'water': drawWater(obj); break;
+                    case 'acid': drawAcid(obj); break;
+                    case 'enemy': drawEnemy(obj); break;
+                }
+            });
+
+            // Draw particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawWall(wall) {
+            const x = wall.x - wall.width/2;
+            const y = wall.y - wall.height/2;
+
+            // Wall shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(x + 3, y + 3, wall.width, wall.height);
+
+            // Main wall
+            const gradient = ctx.createLinearGradient(x, y, x + wall.width, y + wall.height);
+            gradient.addColorStop(0, '#5d6d7e');
+            gradient.addColorStop(0.5, '#7f8c8d');
+            gradient.addColorStop(1, '#5d6d7e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, wall.width, wall.height);
+
+            // Wall highlight
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(x, y, wall.width, 3);
+            ctx.fillRect(x, y, 3, wall.height);
+
+            // Wall shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(x + wall.width - 3, y, 3, wall.height);
+            ctx.fillRect(x, y + wall.height - 3, wall.width, 3);
+        }
+
+        function drawSafeZone(safe) {
+            const x = safe.x - safe.width/2;
+            const y = safe.y - safe.height/2;
+
+            // Glowing effect
+            ctx.shadowColor = '#2ecc71';
+            ctx.shadowBlur = 15;
+
+            const gradient = ctx.createLinearGradient(x, y, x, y + safe.height);
+            gradient.addColorStop(0, '#27ae60');
+            gradient.addColorStop(1, '#1e8449');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, safe.width, safe.height);
+
+            ctx.shadowBlur = 0;
+
+            // Stripes
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            for (let i = 0; i < safe.width; i += 15) {
+                ctx.fillRect(x + i, y, 7, safe.height);
+            }
+
+            // Text
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SAFE', safe.x, safe.y + 4);
+        }
+
+        function drawPin(pin) {
+            if (pin.pulled) return;
+
+            const handleSize = pin.handleRadius;
+
+            if (pin.horizontal) {
+                const startX = pin.x - pin.length/2 + pin.pullProgress;
+                const endX = pin.x + pin.length/2;
+
+                // Pin shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(startX + 2, pin.y - 4, endX - startX, 12);
+
+                // Pin body
+                const gradient = ctx.createLinearGradient(startX, pin.y - 6, startX, pin.y + 6);
+                gradient.addColorStop(0, '#d4d4d4');
+                gradient.addColorStop(0.3, '#f5f5f5');
+                gradient.addColorStop(0.7, '#c0c0c0');
+                gradient.addColorStop(1, '#a0a0a0');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(startX, pin.y - 6, endX - startX, 12);
+
+                // Handle
+                ctx.beginPath();
+                ctx.arc(startX, pin.y, handleSize, 0, Math.PI * 2);
+                const handleGradient = ctx.createRadialGradient(startX - 3, pin.y - 3, 0, startX, pin.y, handleSize);
+                handleGradient.addColorStop(0, '#ffeb3b');
+                handleGradient.addColorStop(0.7, '#ffc107');
+                handleGradient.addColorStop(1, '#ff9800');
+                ctx.fillStyle = handleGradient;
+                ctx.fill();
+                ctx.strokeStyle = '#e65100';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Handle ring
+                ctx.beginPath();
+                ctx.arc(startX, pin.y, handleSize - 4, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function drawHero(hero) {
+            const x = hero.x;
+            const y = hero.y;
+            const size = hero.width;
+
+            // Body
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(x, y + size * 0.1, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Face
+            ctx.fillStyle = '#f5d6ba';
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.15, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(x - size * 0.1, y - size * 0.2, size * 0.06, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.1, y - size * 0.2, size * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Smile
+            ctx.strokeStyle = '#c0392b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.1, size * 0.12, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+
+            // Crown/helmet
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.25, y - size * 0.35);
+            ctx.lineTo(x - size * 0.15, y - size * 0.55);
+            ctx.lineTo(x, y - size * 0.4);
+            ctx.lineTo(x + size * 0.15, y - size * 0.55);
+            ctx.lineTo(x + size * 0.25, y - size * 0.35);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawTreasure(treasure) {
+            const x = treasure.x;
+            const y = treasure.y;
+            const size = treasure.width;
+
+            // Glow
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 15;
+
+            // Chest base
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - size * 0.45, y - size * 0.2, size * 0.9, size * 0.5);
+
+            // Chest top
+            ctx.fillStyle = '#A0522D';
+            ctx.beginPath();
+            ctx.ellipse(x, y - size * 0.2, size * 0.45, size * 0.2, 0, Math.PI, 0);
+            ctx.fill();
+
+            // Gold coins
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(x - size * 0.15, y - size * 0.3, size * 0.12, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.15, y - size * 0.3, size * 0.12, 0, Math.PI * 2);
+            ctx.arc(x, y - size * 0.4, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Lock
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(x - size * 0.08, y - size * 0.1, size * 0.16, size * 0.2);
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.02, size * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+        }
+
+        function drawLava(lava) {
+            const x = lava.x - lava.width/2;
+            const y = lava.y - lava.height/2;
+
+            if (lava.neutralized) return;
+
+            // Glow effect
+            ctx.shadowColor = '#e74c3c';
+            ctx.shadowBlur = 20;
+
+            // Lava body
+            const gradient = ctx.createLinearGradient(x, y, x, y + lava.height);
+            gradient.addColorStop(0, '#e74c3c');
+            gradient.addColorStop(0.5, '#c0392b');
+            gradient.addColorStop(1, '#922b21');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, lava.width, lava.height);
+
+            // Bubbles
+            ctx.fillStyle = '#f39c12';
+            const time = Date.now() / 200;
+            for (let i = 0; i < 3; i++) {
+                const bx = x + lava.width * (0.2 + i * 0.3);
+                const by = y + lava.height * 0.3 + Math.sin(time + i) * 5;
+                ctx.beginPath();
+                ctx.arc(bx, by, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.shadowBlur = 0;
+        }
+
+        function drawWater(water) {
+            const x = water.x - water.width/2;
+            const y = water.y - water.height/2;
+
+            // Water body
+            ctx.globalAlpha = 0.8;
+            const gradient = ctx.createLinearGradient(x, y, x, y + water.height);
+            gradient.addColorStop(0, '#3498db');
+            gradient.addColorStop(0.5, '#2980b9');
+            gradient.addColorStop(1, '#1f618d');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, water.width, water.height);
+
+            // Waves
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2;
+            const time = Date.now() / 300;
+            ctx.beginPath();
+            for (let wx = x; wx < x + water.width; wx += 5) {
+                const wy = y + 5 + Math.sin(wx * 0.1 + time) * 2;
+                if (wx === x) ctx.moveTo(wx, wy);
+                else ctx.lineTo(wx, wy);
+            }
+            ctx.stroke();
+
+            ctx.globalAlpha = 1;
+        }
+
+        function drawAcid(acid) {
+            const x = acid.x - acid.width/2;
+            const y = acid.y - acid.height/2;
+
+            // Glow effect
+            ctx.shadowColor = '#1abc9c';
+            ctx.shadowBlur = 15;
+
+            // Acid body
+            ctx.globalAlpha = 0.85;
+            const gradient = ctx.createLinearGradient(x, y, x, y + acid.height);
+            gradient.addColorStop(0, '#1abc9c');
+            gradient.addColorStop(0.5, '#16a085');
+            gradient.addColorStop(1, '#0e6655');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, acid.width, acid.height);
+
+            // Bubbles
+            ctx.fillStyle = '#2ecc71';
+            const time = Date.now() / 150;
+            for (let i = 0; i < 4; i++) {
+                const bx = x + acid.width * (0.15 + i * 0.25);
+                const by = y + acid.height * 0.4 + Math.sin(time + i * 1.5) * 4;
+                ctx.beginPath();
+                ctx.arc(bx, by, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
+
+        function drawEnemy(enemy) {
+            if (enemy.defeated) return;
+
+            const x = enemy.x;
+            const y = enemy.y;
+            const size = enemy.width;
+            const isBoss = enemy.boss;
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x, y + size * 0.45, size * 0.35, size * 0.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillStyle = isBoss ? '#8e44ad' : '#9b59b6';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Angry eyes
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.ellipse(x - size * 0.15, y - size * 0.05, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + size * 0.15, y - size * 0.05, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupils
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.arc(x - size * 0.12, y - size * 0.05, size * 0.06, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.18, y - size * 0.05, size * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Angry eyebrows
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.25, y - size * 0.2);
+            ctx.lineTo(x - size * 0.05, y - size * 0.25);
+            ctx.moveTo(x + size * 0.25, y - size * 0.2);
+            ctx.lineTo(x + size * 0.05, y - size * 0.25);
+            ctx.stroke();
+
+            // Mouth
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(x, y + size * 0.2, size * 0.15, 0, Math.PI);
+            ctx.fill();
+
+            // Teeth
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(x - size * 0.1, y + size * 0.18, size * 0.06, size * 0.08);
+            ctx.fillRect(x + size * 0.04, y + size * 0.18, size * 0.06, size * 0.08);
+
+            // Horns for boss
+            if (isBoss) {
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.moveTo(x - size * 0.3, y - size * 0.25);
+                ctx.lineTo(x - size * 0.4, y - size * 0.55);
+                ctx.lineTo(x - size * 0.15, y - size * 0.3);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x + size * 0.3, y - size * 0.25);
+                ctx.lineTo(x + size * 0.4, y - size * 0.55);
+                ctx.lineTo(x + size * 0.15, y - size * 0.3);
+                ctx.fill();
+            }
+        }
+
+        // Touch handlers
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            startDrag(x, y);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!draggingPin) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            continueDrag(x);
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            endDrag();
+        }
+
+        // Mouse handlers (for testing on desktop)
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            startDrag(x, y);
+        }
+
+        function handleMouseMove(e) {
+            if (!draggingPin) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            continueDrag(x);
+        }
+
+        function handleMouseEnd(e) {
+            endDrag();
+        }
+
+        function startDrag(x, y) {
+            if (gameState !== 'playing') return;
+
+            pins.forEach(pin => {
+                if (pin.pulled) return;
+
+                const handleX = pin.x - pin.length/2 + pin.pullProgress;
+                const handleY = pin.y;
+                const dist = Math.sqrt((x - handleX) ** 2 + (y - handleY) ** 2);
+
+                if (dist < pin.handleRadius + 20) {
+                    draggingPin = pin;
+                    dragStartY = x;
+                }
+            });
+        }
+
+        function continueDrag(x) {
+            if (!draggingPin) return;
+
+            const delta = x - dragStartY;
+            if (delta < 0) {
+                draggingPin.pullProgress = Math.max(0, draggingPin.pullProgress + delta);
+                dragStartY = x;
+            } else {
+                draggingPin.pullProgress = Math.min(draggingPin.length - 20, draggingPin.pullProgress + delta);
+                dragStartY = x;
+            }
+
+            // Check if pin is fully pulled
+            if (draggingPin.pullProgress >= draggingPin.length - 25) {
+                draggingPin.pulled = true;
+                createParticles(draggingPin.x - draggingPin.length/2, draggingPin.y, '#ffd700', 10);
+                draggingPin = null;
+            }
+        }
+
+        function endDrag() {
+            draggingPin = null;
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
