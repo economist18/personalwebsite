@@ -168,16 +168,16 @@
                     <div class="label">IATA Codes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number">26 MB</div>
-                    <div class="label">Database Size</div>
+                    <div class="number">9 MB</div>
+                    <div class="label">CSV File Size</div>
                 </div>
             </div>
 
             <div class="download-section">
-                <a href="airport_runway_database/airport_runways.db" class="download-btn" download>
-                    ⬇️ Download Database
+                <a href="airports_runways.csv" class="download-btn" download>
+                    ⬇️ Download CSV
                 </a>
-                <p class="download-info">SQLite format • Ready to use • No signup required</p>
+                <p class="download-info">CSV format • Opens in Excel/Google Sheets • No signup required</p>
             </div>
 
             <div class="features">
@@ -195,34 +195,23 @@
             </div>
 
             <div class="features">
-                <h2>Database Schema</h2>
+                <h2>CSV Columns</h2>
                 <div class="schema">
-<span class="table-name">airports</span>: <span class="column">id</span>, <span class="column">ident</span> (ICAO), <span class="column">iata_code</span>, <span class="column">name</span>, <span class="column">latitude</span>, <span class="column">longitude</span>, <span class="column">elevation_ft</span>, <span class="column">type</span>, <span class="column">iso_country</span>, <span class="column">municipality</span>
-
-<span class="table-name">runways</span>: <span class="column">id</span>, <span class="column">airport_id</span>, <span class="column">length_ft</span>, <span class="column">length_m</span>, <span class="column">width_ft</span>, <span class="column">surface</span>, <span class="column">lighted</span>, <span class="column">le_ident</span>, <span class="column">he_ident</span>, <span class="column">le_heading_deg</span>, <span class="column">le_latitude</span>, <span class="column">le_longitude</span>
-                </div>
-            </div>
-
-            <div class="features">
-                <h2>Example Queries</h2>
-                <div class="schema">
--- Find the longest runways
-SELECT r.length_ft, a.ident, a.name, a.iso_country
-FROM runways r
-JOIN airports a ON r.airport_id = a.id
-ORDER BY r.length_ft DESC LIMIT 10;
-
--- Get all runways at JFK
-SELECT le_ident || '/' || he_ident AS runway,
-       length_ft, surface
-FROM runways WHERE airport_ident = 'KJFK';
-
--- Airports with 4+ runways
-SELECT a.ident, a.name, COUNT(r.id) as runways
-FROM airports a
-JOIN runways r ON a.id = r.airport_id
-GROUP BY a.id HAVING runways >= 4
-ORDER BY runways DESC;
+<span class="column">ICAO</span> - ICAO airport code (e.g., KJFK)
+<span class="column">IATA</span> - IATA airport code (e.g., JFK)
+<span class="column">Airport Name</span> - Full airport name
+<span class="column">Latitude</span> - Latitude in decimal degrees
+<span class="column">Longitude</span> - Longitude in decimal degrees
+<span class="column">Type</span> - large_airport, medium_airport, small_airport, heliport, seaplane_base, closed
+<span class="column">Country</span> - ISO country code (e.g., US, GB, DE)
+<span class="column">City</span> - Municipality/city name
+<span class="column">Runway</span> - Runway designator (e.g., 09L/27R)
+<span class="column">Length (ft)</span> - Runway length in feet
+<span class="column">Length (m)</span> - Runway length in meters
+<span class="column">Width (ft)</span> - Runway width in feet
+<span class="column">Surface</span> - Surface type (ASP, CON, TURF, etc.)
+<span class="column">Lighted</span> - 1 if lighted, 0 if not
+<span class="column">Heading</span> - Magnetic heading in degrees
                 </div>
             </div>
         </div>
