@@ -156,28 +156,35 @@
         <div class="content">
             <div class="stats">
                 <div class="stat-card">
-                    <div class="number">84,524</div>
-                    <div class="label">Airports Worldwide</div>
+                    <div class="number">1,218</div>
+                    <div class="label">Major Airports</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number">47,548</div>
-                    <div class="label">Runways</div>
+                    <div class="number">2,075</div>
+                    <div class="label">Runways Tracked</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number">9,060</div>
-                    <div class="label">IATA Codes</div>
+                    <div class="number">1985-2024</div>
+                    <div class="label">Years Covered</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number">9 MB</div>
-                    <div class="label">CSV File Size</div>
+                    <div class="number">18,675</div>
+                    <div class="label">Data Points</div>
                 </div>
             </div>
 
             <div class="download-section">
-                <a href="airports_runways.csv" class="download-btn" download>
-                    ⬇️ Download CSV
+                <a href="runway_lengths_historical.csv" class="download-btn" download>
+                    ⬇️ Download Historical Data
                 </a>
-                <p class="download-info">CSV format • Opens in Excel/Google Sheets • No signup required</p>
+                <p class="download-info">Runway lengths by year (1985-2024) • Major airports only • 2 MB CSV</p>
+            </div>
+
+            <div class="download-section" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <a href="airports_runways.csv" class="download-btn" style="color: #11998e;" download>
+                    ⬇️ Download Current Data
+                </a>
+                <p class="download-info">All 84,524 airports with current runway specs • 9 MB CSV</p>
             </div>
 
             <div class="features">
@@ -195,24 +202,31 @@
             </div>
 
             <div class="features">
-                <h2>CSV Columns</h2>
+                <h2>Historical Data Columns</h2>
                 <div class="schema">
-<span class="column">ICAO</span> - ICAO airport code (e.g., KJFK)
-<span class="column">IATA</span> - IATA airport code (e.g., JFK)
-<span class="column">Airport Name</span> - Full airport name
-<span class="column">Latitude</span> - Latitude in decimal degrees
-<span class="column">Longitude</span> - Longitude in decimal degrees
-<span class="column">Type</span> - large_airport, medium_airport, small_airport, heliport, seaplane_base, closed
-<span class="column">Country</span> - ISO country code (e.g., US, GB, DE)
-<span class="column">City</span> - Municipality/city name
-<span class="column">Runway</span> - Runway designator (e.g., 09L/27R)
-<span class="column">Length (ft)</span> - Runway length in feet
-<span class="column">Length (m)</span> - Runway length in meters
-<span class="column">Width (ft)</span> - Runway width in feet
-<span class="column">Surface</span> - Surface type (ASP, CON, TURF, etc.)
-<span class="column">Lighted</span> - 1 if lighted, 0 if not
-<span class="column">Heading</span> - Magnetic heading in degrees
+<span class="column">icao</span> - ICAO airport code (e.g., KJFK)
+<span class="column">iata</span> - IATA airport code (e.g., JFK)
+<span class="column">airport_name</span> - Full airport name
+<span class="column">country</span> - ISO country code (e.g., US, GB, DE)
+<span class="column">latitude</span> - Latitude in decimal degrees
+<span class="column">longitude</span> - Longitude in decimal degrees
+<span class="column">runway</span> - Runway designator (e.g., 09L/27R)
+<span class="column">year</span> - Year of measurement (1985, 1990, 1995, ... 2024)
+<span class="column">length_m</span> - Runway length in meters
+<span class="column">length_ft</span> - Runway length in feet
+<span class="column">measurement_type</span> - "modeled" (estimated from growth patterns)
+<span class="column">current_length_m</span> - Current (2024) runway length for reference
                 </div>
+            </div>
+
+            <div class="features">
+                <h2>Methodology</h2>
+                <ul class="feature-list">
+                    <li>Historical lengths are modeled based on typical runway expansion patterns observed at major airports</li>
+                    <li>Model assumes runways were ~85% of current length in 1985, with gradual expansion</li>
+                    <li>Data points every 5 years: 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2024</li>
+                    <li>For actual satellite-measured data, contact us about Google Earth Engine analysis</li>
+                </ul>
             </div>
         </div>
 
