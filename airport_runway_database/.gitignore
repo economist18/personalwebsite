@@ -1,3 +1,6 @@
+# Generated database (rebuild with fetch_ourairports.py)
+airport_runways.db
+
 # Cached data from OurAirports
 ourairports_data/
 
