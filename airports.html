@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Runway Database - Download</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: #1a1a2e;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+        .content {
+            padding: 40px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        .download-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .download-btn {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 18px 48px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .download-info {
+            color: white;
+            margin-top: 15px;
+            opacity: 0.9;
+        }
+        .features {
+            margin-bottom: 40px;
+        }
+        .features h2 {
+            margin-bottom: 20px;
+            color: #1a1a2e;
+        }
+        .feature-list {
+            list-style: none;
+        }
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li::before {
+            content: "✓";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        .schema {
+            background: #1a1a2e;
+            color: #a0a0a0;
+            padding: 24px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+        .schema .table-name {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .schema .column {
+            color: #98c379;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✈️ Airport Runway Database</h1>
+            <p>Comprehensive worldwide airport and runway data</p>
+        </div>
+
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="number">84,524</div>
+                    <div class="label">Airports Worldwide</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">47,548</div>
+                    <div class="label">Runways</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">9,060</div>
+                    <div class="label">IATA Codes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">26 MB</div>
+                    <div class="label">Database Size</div>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <a href="airport_runway_database/airport_runways.db" class="download-btn" download>
+                    ⬇️ Download Database
+                </a>
+                <p class="download-info">SQLite format • Ready to use • No signup required</p>
+            </div>
+
+            <div class="features">
+                <h2>What's Included</h2>
+                <ul class="feature-list">
+                    <li>All airports worldwide (large, medium, small, heliports, seaplane bases)</li>
+                    <li>ICAO and IATA codes for commercial airports</li>
+                    <li>Runway lengths in feet and meters</li>
+                    <li>Runway widths and surface types (asphalt, concrete, grass, etc.)</li>
+                    <li>Runway headings and designators (e.g., 09L/27R)</li>
+                    <li>Geographic coordinates (latitude/longitude)</li>
+                    <li>Airport elevation data</li>
+                    <li>Country and municipality information</li>
+                </ul>
+            </div>
+
+            <div class="features">
+                <h2>Database Schema</h2>
+                <div class="schema">
+<span class="table-name">airports</span>: <span class="column">id</span>, <span class="column">ident</span> (ICAO), <span class="column">iata_code</span>, <span class="column">name</span>, <span class="column">latitude</span>, <span class="column">longitude</span>, <span class="column">elevation_ft</span>, <span class="column">type</span>, <span class="column">iso_country</span>, <span class="column">municipality</span>
+
+<span class="table-name">runways</span>: <span class="column">id</span>, <span class="column">airport_id</span>, <span class="column">length_ft</span>, <span class="column">length_m</span>, <span class="column">width_ft</span>, <span class="column">surface</span>, <span class="column">lighted</span>, <span class="column">le_ident</span>, <span class="column">he_ident</span>, <span class="column">le_heading_deg</span>, <span class="column">le_latitude</span>, <span class="column">le_longitude</span>
+                </div>
+            </div>
+
+            <div class="features">
+                <h2>Example Queries</h2>
+                <div class="schema">
+-- Find the longest runways
+SELECT r.length_ft, a.ident, a.name, a.iso_country
+FROM runways r
+JOIN airports a ON r.airport_id = a.id
+ORDER BY r.length_ft DESC LIMIT 10;
+
+-- Get all runways at JFK
+SELECT le_ident || '/' || he_ident AS runway,
+       length_ft, surface
+FROM runways WHERE airport_ident = 'KJFK';
+
+-- Airports with 4+ runways
+SELECT a.ident, a.name, COUNT(r.id) as runways
+FROM airports a
+JOIN runways r ON a.id = r.airport_id
+GROUP BY a.id HAVING runways >= 4
+ORDER BY runways DESC;
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Data source: <a href="https://ourairports.com" target="_blank">OurAirports</a> (CC0 Public Domain)
+        </div>
+    </div>
+</body>
+</html>
